@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: cineverse-staging
+    env: node
+    plan: free
+    region: oregon
+    buildCommand: npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 30d
+      - key: TMDB_API_KEY
+        sync: false
+      - key: CLIENT_URL
+        value: http://localhost:5173

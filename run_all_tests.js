@@ -9,6 +9,7 @@ const suites = [
   { name: 'Stage 2: E2E Realistic User Journeys', file: 'test_e2e_journeys.js' },
   { name: 'Stage 3: Production Security & Data Integrity', file: 'test_stage3_security.js' },
   { name: 'Stage 4: Performance, Accessibility & UX', file: 'test_stage4_performance_a11y.js' },
+  { name: 'Stage 5: Staging Deployment Readiness', file: 'test_stage5_deployment_readiness.js' },
 ];
 
 console.log('====================================================');

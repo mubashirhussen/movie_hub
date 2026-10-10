@@ -1,7 +1,11 @@
-import axios from 'axios';
+// Resolve API Base URL from environment variable if provided, with safe fallback to relative /api
+const rawBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api';
+const baseURL = rawBaseUrl.endsWith('/api')
+  ? rawBaseUrl
+  : `${rawBaseUrl.replace(/\/+$/, '')}/api`;
 
 const api = axios.create({
-  baseURL: '/api',
+  baseURL,
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
