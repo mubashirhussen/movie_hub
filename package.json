@@ -12,7 +12,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "start": "node server/server.js",
-    "test": "node test_phase2_verification.js"
+    "test": "node test_phase2_verification.js && node test_phase3_verification.js",
+    "test:phase2": "node test_phase2_verification.js",
+    "test:phase3": "node test_phase3_verification.js"
   },
   "keywords": [
     "react",

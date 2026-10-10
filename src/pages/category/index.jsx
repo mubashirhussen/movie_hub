@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { Film, Sparkles, Filter, ChevronLeft, ChevronRight, Play, Star } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { Film } from 'lucide-react';
 import movieService from '../../services/movieService';
 import MovieGrid from '../../components/movieGrid';
 import Pagination from '../../components/Pagination';
-import Loading from '../../components/loading';
-import ErrorMessage from '../../components/errorMessage';
 import './index.css';
 
 const industryMetadata = {
@@ -47,45 +45,57 @@ const industryMetadata = {
   },
 };
 
+const industriesList = [
+  { key: 'tollywood', label: 'Tollywood', icon: '🔥', lang: 'Telugu' },
+  { key: 'bollywood', label: 'Bollywood', icon: '🌟', lang: 'Hindi' },
+  { key: 'hollywood', label: 'Hollywood', icon: '🎬', lang: 'English' },
+  { key: 'kollywood', label: 'Kollywood', icon: '⚡', lang: 'Tamil' },
+  { key: 'sandalwood', label: 'Sandalwood', icon: '🏔️', lang: 'Kannada' },
+  { key: 'mollywood', label: 'Mollywood', icon: '🌿', lang: 'Malayalam' },
+];
+
 const CategoryPage = () => {
   const { industry } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const currentIndustry = (industry || 'tollywood').toLowerCase();
+  const pageParam = Math.max(1, parseInt(searchParams.get('page')) || 1);
 
   const [movies, setMovies] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const abortControllerRef = useRef(null);
+
   const meta = industryMetadata[currentIndustry] || {
     title: `${currentIndustry.toUpperCase()} Cinema`,
     tagline: 'Explore verified original movies, cast, and trailers',
     icon: '🎬',
-    accentColor: '#e50914',
+    accentColor: '#ec4899',
   };
 
-  const industriesList = [
-    { key: 'tollywood', label: 'Tollywood', icon: '🔥', lang: 'Telugu' },
-    { key: 'bollywood', label: 'Bollywood', icon: '🌟', lang: 'Hindi' },
-    { key: 'hollywood', label: 'Hollywood', icon: '🎬', lang: 'English' },
-    { key: 'kollywood', label: 'Kollywood', icon: '⚡', lang: 'Tamil' },
-    { key: 'sandalwood', label: 'Sandalwood', icon: '🏔️', lang: 'Kannada' },
-    { key: 'mollywood', label: 'Mollywood', icon: '🌿', lang: 'Malayalam' },
-  ];
+  const fetchMovies = async () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
-  const fetchMovies = async (page = 1) => {
     setLoading(true);
     setError(null);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
 
     try {
-      const data = await movieService.getMoviesByIndustry(currentIndustry, page);
+      const data = await movieService.getMoviesByIndustry(currentIndustry, pageParam, {
+        signal: controller.signal,
+      });
       setMovies(data.results || []);
-      setCurrentPage(data.page || page);
-      setTotalPages(data.total_pages || 1);
+      setTotalPages(Math.min(data.total_pages || 1, 500));
       setTotalResults(data.total_results || (data.results ? data.results.length : 0));
     } catch (err) {
+      if (err.name === 'CanceledError' || err.name === 'AbortError' || err.code === 'ERR_CANCELED') {
+        return;
+      }
       setError(err.message || `Unable to load ${meta.title} collection.`);
     } finally {
       setLoading(false);
@@ -93,15 +103,18 @@ const CategoryPage = () => {
   };
 
   useEffect(() => {
-    setCurrentPage(1);
-    fetchMovies(1);
-  }, [currentIndustry]);
+    fetchMovies();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [currentIndustry, pageParam]);
 
   const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= totalPages && newPage !== currentPage) {
-      setCurrentPage(newPage);
-      fetchMovies(newPage);
-    }
+    setSearchParams({ page: newPage.toString() });
   };
 
   return (
@@ -111,7 +124,7 @@ const CategoryPage = () => {
         <div className="container category-hero-inner">
           <div className="category-badge-pill" style={{ borderColor: meta.accentColor }}>
             <span className="cat-icon">{meta.icon}</span>
-            <span className="cat-badge-name">Cinema Industry Category</span>
+            <span className="cat-badge-name">Cinema Industry Showcase</span>
           </div>
 
           <h1 className="category-main-heading">{meta.title}</h1>
@@ -126,6 +139,7 @@ const CategoryPage = () => {
                   key={item.key}
                   to={`/category/${item.key}`}
                   className={`industry-pill-btn ${isActive ? 'active' : ''}`}
+                  aria-pressed={isActive}
                 >
                   <span className="pill-icon">{item.icon}</span>
                   <span className="pill-label">{item.label}</span>
@@ -143,27 +157,28 @@ const CategoryPage = () => {
           <div className="results-count-badge">
             <Film size={16} />
             <span>
-              Showing {movies.length} {movies.length === 1 ? 'Movie' : 'Movies'} • Page {currentPage} of {totalPages}
+              {loading
+                ? `Loading ${meta.title}...`
+                : `Showing ${movies.length} ${movies.length === 1 ? 'Movie' : 'Movies'} • Page ${pageParam} of ${totalPages}`}
             </span>
           </div>
         </div>
 
-        {loading ? (
-          <Loading message={`Fetching verified ${meta.title} collection...`} />
-        ) : error ? (
-          <ErrorMessage message={error} onRetry={() => fetchMovies(currentPage)} />
-        ) : (
-          <>
-            <MovieGrid movies={movies} loading={false} />
+        <MovieGrid
+          movies={movies}
+          loading={loading}
+          error={error}
+          onRetry={fetchMovies}
+          emptyMessage={`No movies found for ${meta.title}.`}
+          skeletonCount={10}
+        />
 
-            {totalPages > 1 && (
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-              />
-            )}
-          </>
+        {!loading && !error && movies.length > 0 && totalPages > 1 && (
+          <Pagination
+            currentPage={pageParam}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
         )}
       </main>
     </div>

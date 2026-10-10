@@ -71,6 +71,41 @@ export const getMoviesByIndustry = async (industry, page = 1, options = {}) => {
   return unwrapMovieResponse(response, '/movies/category');
 };
 
+export const getNowPlayingMovies = async (page = 1, options = {}) => {
+  const response = await api.get('/movies/now-playing', { params: { page }, ...options });
+  return unwrapMovieResponse(response, '/movies/now-playing');
+};
+
+export const getGenres = async (options = {}) => {
+  const response = await api.get('/movies/genres', options);
+  const payload = response.data?.data ?? response.data;
+  return payload?.genres ? payload : { genres: Array.isArray(payload) ? payload : [] };
+};
+
+export const discoverMovies = async (
+  { genre = null, sortBy = 'popularity.desc', year = null, industry = null, page = 1 } = {},
+  options = {}
+) => {
+  const params = { page, sortBy };
+  if (genre) params.genre = genre;
+  if (year) params.year = year;
+  if (industry) params.industry = industry;
+
+  const response = await api.get('/movies/discover', { params, ...options });
+  return unwrapMovieResponse(response, '/movies/discover');
+};
+
+export const searchPeople = async (query, page = 1, options = {}) => {
+  const response = await api.get('/people/search', { params: { query, page }, ...options });
+  const payload = response.data?.data ?? response.data;
+  return payload;
+};
+
+export const getPersonMovies = async (personId, page = 1, options = {}) => {
+  const response = await api.get(`/people/${personId}/movies`, { params: { page }, ...options });
+  return unwrapMovieResponse(response, `/people/${personId}/movies`);
+};
+
 export const trackMovieView = async (movieId, options = {}) => {
   try {
     const response = await api.post(`/movies/${movieId}/view`, {}, options);
@@ -84,7 +119,12 @@ export default {
   getPopularMovies,
   getTopRatedMovies,
   getUpcomingMovies,
+  getNowPlayingMovies,
+  getGenres,
+  discoverMovies,
   searchMovies,
+  searchPeople,
+  getPersonMovies,
   getMovieDetails,
   getMovieCast,
   getMovieTrailer,

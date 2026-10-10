@@ -178,3 +178,46 @@
   background: rgba(168, 85, 247, 0.18);
   color: #ffffff;
 }
+
+.suggestion-row-item.selected {
+  background: rgba(139, 92, 246, 0.25);
+  outline: 1px solid rgba(168, 85, 247, 0.4);
+}
+
+.suggestion-thumb-round {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+}
+
+.suggestion-thumb-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #232b45;
+  color: #a855f7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.suggestion-actor-tag {
+  background: rgba(236, 72, 153, 0.18);
+  color: #f472b6;
+  border: 1px solid rgba(236, 72, 153, 0.3);
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.suggestion-known-for {
+  color: #94a3b8;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}

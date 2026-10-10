@@ -12,7 +12,9 @@ import {
   Menu,
   X,
   Compass,
-  Home
+  Home,
+  Play,
+  SlidersHorizontal
 } from 'lucide-react';
 import Logo from '../logo';
 import SearchBar from '../searchBar';
@@ -67,6 +69,22 @@ const Navbar = () => {
           >
             <Home size={15} />
             <span>Home</span>
+          </NavLink>
+
+          <NavLink
+            to="/discover"
+            className={({ isActive }) => `nav-link-item ${isActive ? 'active' : ''}`}
+          >
+            <SlidersHorizontal size={15} />
+            <span>Discover</span>
+          </NavLink>
+
+          <NavLink
+            to="/now-playing"
+            className={({ isActive }) => `nav-link-item ${isActive ? 'active' : ''}`}
+          >
+            <Play size={15} fill="currentColor" />
+            <span>Now Playing</span>
           </NavLink>
 
           <NavLink
@@ -262,6 +280,14 @@ const Navbar = () => {
               <NavLink to="/" className="mobile-nav-item">
                 <Home size={18} />
                 <span>Home</span>
+              </NavLink>
+              <NavLink to="/discover" className="mobile-nav-item">
+                <SlidersHorizontal size={18} />
+                <span>Discover &amp; Filters</span>
+              </NavLink>
+              <NavLink to="/now-playing" className="mobile-nav-item">
+                <Play size={18} fill="currentColor" />
+                <span>Now Playing</span>
               </NavLink>
               <NavLink to="/popular" className="mobile-nav-item">
                 <Flame size={18} />

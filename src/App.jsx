@@ -7,6 +7,7 @@ import Home from './pages/home';
 import Popular from './pages/popular';
 import TopRated from './pages/topRated';
 import Upcoming from './pages/upcoming';
+import NowPlaying from './pages/nowPlaying';
 import SearchPage from './pages/search';
 import MovieDetails from './pages/movieDetails';
 import CategoryPage from './pages/category';
@@ -29,7 +30,9 @@ function App() {
           <Route path="/popular" element={<Popular />} />
           <Route path="/top-rated" element={<TopRated />} />
           <Route path="/upcoming" element={<Upcoming />} />
+          <Route path="/now-playing" element={<NowPlaying />} />
           <Route path="/search" element={<SearchPage />} />
+          <Route path="/discover" element={<SearchPage />} />
           <Route path="/category/:industry" element={<CategoryPage />} />
           <Route path="/industry/:industry" element={<CategoryPage />} />
           <Route path="/movie/:id" element={<MovieDetails />} />

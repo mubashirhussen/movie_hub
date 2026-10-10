@@ -3,8 +3,6 @@ import { useSearchParams } from 'react-router-dom';
 import { Flame } from 'lucide-react';
 import MovieGrid from '../../components/movieGrid';
 import Pagination from '../../components/Pagination';
-import Loading from '../../components/loading';
-import ErrorMessage from '../../components/errorMessage';
 import movieService from '../../services/movieService';
 import './index.css';
 
@@ -58,19 +56,21 @@ const Popular = () => {
         </div>
       </div>
 
-      {error ? (
-        <ErrorMessage message={error} onRetry={() => fetchMovies(currentPage)} />
-      ) : loading ? (
-        <Loading message={`Loading popular movies (Page ${currentPage})...`} />
-      ) : (
-        <>
-          <MovieGrid movies={movies} loading={loading} />
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-          />
-        </>
+      <MovieGrid
+        movies={movies}
+        loading={loading}
+        error={error}
+        onRetry={() => fetchMovies(currentPage)}
+        emptyMessage="No popular movies found right now."
+        skeletonCount={10}
+      />
+
+      {!loading && !error && movies.length > 0 && totalPages > 1 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
       )}
     </div>
   );

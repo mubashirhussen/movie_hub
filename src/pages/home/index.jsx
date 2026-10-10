@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Flame, Star, Calendar, ChevronRight, Compass } from 'lucide-react';
+import { Flame, Star, Calendar, ChevronRight, Compass, Play } from 'lucide-react';
 import HeroSection from '../../components/heroSection';
 import MovieGrid from '../../components/movieGrid';
 import movieService from '../../services/movieService';
@@ -20,6 +20,10 @@ const Home = () => {
   const [popularMovies, setPopularMovies] = useState([]);
   const [popularLoading, setPopularLoading] = useState(true);
   const [popularError, setPopularError] = useState(null);
+
+  const [nowPlayingMovies, setNowPlayingMovies] = useState([]);
+  const [nowPlayingLoading, setNowPlayingLoading] = useState(true);
+  const [nowPlayingError, setNowPlayingError] = useState(null);
 
   const [topRatedMovies, setTopRatedMovies] = useState([]);
   const [topRatedLoading, setTopRatedLoading] = useState(true);
@@ -48,6 +52,19 @@ const Home = () => {
       setPopularError(err.message || 'Unable to load popular movies.');
     } finally {
       setPopularLoading(false);
+    }
+  };
+
+  const fetchNowPlaying = async () => {
+    setNowPlayingLoading(true);
+    setNowPlayingError(null);
+    try {
+      const data = await movieService.getNowPlayingMovies(1);
+      setNowPlayingMovies(data.results || []);
+    } catch (err) {
+      setNowPlayingError(err.message || 'Unable to load now playing movies.');
+    } finally {
+      setNowPlayingLoading(false);
     }
   };
 
@@ -112,8 +129,9 @@ const Home = () => {
   };
 
   useEffect(() => {
-    // Concurrently load all 4 sections on mount
+    // Concurrently load all sections on mount
     fetchPopular();
+    fetchNowPlaying();
     fetchTopRated();
     fetchUpcoming();
     fetchIndustry('tollywood');
@@ -222,7 +240,36 @@ const Home = () => {
           />
         </section>
 
-        {/* 4. Top Rated Masterpieces Section */}
+        {/* 4. Now Playing in Theaters Section */}
+        <section className="home-movie-section">
+          <div className="section-header-row">
+            <div className="section-title-group">
+              <div className="section-icon-badge flame">
+                <Play size={18} fill="currentColor" />
+              </div>
+              <div>
+                <h2 className="section-heading">Now Playing in Theaters</h2>
+                <p className="section-subheading">Current big screen releases and streaming premieres</p>
+              </div>
+            </div>
+
+            <Link to="/now-playing" className="btn-view-all-section">
+              <span>View All</span>
+              <ChevronRight size={16} />
+            </Link>
+          </div>
+
+          <MovieGrid
+            movies={nowPlayingMovies.slice(0, 10)}
+            loading={nowPlayingLoading}
+            error={nowPlayingError}
+            onRetry={fetchNowPlaying}
+            emptyMessage="No currently playing releases found."
+            skeletonCount={5}
+          />
+        </section>
+
+        {/* 5. Top Rated Masterpieces Section */}
         <section className="home-movie-section">
           <div className="section-header-row">
             <div className="section-title-group">

@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 
 import authRoutes from './routes/authRoutes.js';
 import movieRoutes from './routes/movieRoutes.js';
+import peopleRoutes from './routes/peopleRoutes.js';
 import watchlistRoutes from './routes/watchlistRoutes.js';
 import favoriteRoutes from './routes/favoriteRoutes.js';
 import userRoutes from './routes/userRoutes.js';
@@ -32,6 +33,7 @@ app.get('/api/health', (req, res) => {
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/movies', movieRoutes);
+app.use('/api/people', peopleRoutes);
 app.use('/api/watchlist', watchlistRoutes);
 app.use('/api/favorites', favoriteRoutes);
 app.use('/api/users', userRoutes);

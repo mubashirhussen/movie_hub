@@ -1,6 +1,7 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
 import { seedMovies } from '../data/seedMovies.js';
+import { getIndustryConfig } from '../config/industryConfig.js';
 
 dotenv.config();
 
@@ -474,18 +475,241 @@ export const getSimilarMovies = async (movieId, page = 1) => {
   return fallbackSimilar;
 };
 
-// 10. Industry / Category Movies (Tollywood, Bollywood, Hollywood, Kollywood, Sandalwood, Mollywood)
+// 10. Now Playing Movies
+export const getNowPlayingMovies = async (page = 1) => {
+  const cacheKey = `now_playing_${page}`;
+  const cached = getFromCache(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const response = await tmdbClient.get('/movie/now_playing', {
+      params: { api_key: TMDB_API_KEY, language: 'en-US', page },
+    });
+
+    if (response.data?.results?.length > 0) {
+      registerDiscoveredMovies(response.data.results);
+      setInCache(cacheKey, response.data);
+      return response.data;
+    }
+  } catch (error) {
+    console.warn(`TMDB now_playing fallback notice: ${error.message}`);
+  }
+
+  const sorted = [...seedMovies].sort((a, b) => new Date(b.release_date || 0) - new Date(a.release_date || 0));
+  const fallback = getSeedPagination(sorted, page, 10);
+  registerDiscoveredMovies(fallback.results);
+  setInCache(cacheKey, fallback);
+  return fallback;
+};
+
+// Standard official TMDB Movie Genres list
+const DEFAULT_GENRES = [
+  { id: 28, name: 'Action' },
+  { id: 12, name: 'Adventure' },
+  { id: 16, name: 'Animation' },
+  { id: 35, name: 'Comedy' },
+  { id: 80, name: 'Crime' },
+  { id: 99, name: 'Documentary' },
+  { id: 18, name: 'Drama' },
+  { id: 10751, name: 'Family' },
+  { id: 14, name: 'Fantasy' },
+  { id: 36, name: 'History' },
+  { id: 27, name: 'Horror' },
+  { id: 10402, name: 'Music' },
+  { id: 9648, name: 'Mystery' },
+  { id: 10749, name: 'Romance' },
+  { id: 878, name: 'Science Fiction' },
+  { id: 10770, name: 'TV Movie' },
+  { id: 53, name: 'Thriller' },
+  { id: 10752, name: 'War' },
+  { id: 37, name: 'Western' },
+];
+
+// 11. Movie Genres
+export const getGenres = async () => {
+  const cacheKey = 'genres_list';
+  const cached = getFromCache(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const response = await tmdbClient.get('/genre/movie/list', {
+      params: { api_key: TMDB_API_KEY, language: 'en-US' },
+    });
+
+    if (response.data?.genres?.length > 0) {
+      setInCache(cacheKey, response.data, 24 * 60 * 60 * 1000);
+      return response.data;
+    }
+  } catch (error) {
+    console.warn(`TMDB genres fallback notice: ${error.message}`);
+  }
+
+  const fallback = { genres: DEFAULT_GENRES };
+  setInCache(cacheKey, fallback, 24 * 60 * 60 * 1000);
+  return fallback;
+};
+
+// Supported Whitelisted Sort Options
+const ALLOWED_SORT_OPTIONS = new Set([
+  'popularity.desc',
+  'popularity.asc',
+  'vote_average.desc',
+  'vote_average.asc',
+  'primary_release_date.desc',
+  'primary_release_date.asc',
+]);
+
+// 12. Discover Movies with genre, year, industry, and sorting
+export const discoverMovies = async ({
+  genre = null,
+  sortBy = 'popularity.desc',
+  year = null,
+  industry = null,
+  page = 1,
+} = {}) => {
+  const safeSort = ALLOWED_SORT_OPTIONS.has(sortBy) ? sortBy : 'popularity.desc';
+  const safePage = Math.max(1, Math.min(parseInt(page) || 1, 500));
+  const safeYear = year && !isNaN(year) && Number(year) >= 1900 && Number(year) <= 2100 ? Number(year) : null;
+  const genreId = genre ? String(genre).trim() : null;
+
+  const indConfig = industry ? getIndustryConfig(industry) : null;
+  const cacheKey = `discover_${genreId || 'all'}_${safeSort}_${safeYear || 'all'}_${industry || 'all'}_${safePage}`;
+  const cached = getFromCache(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const tmdbParams = {
+      api_key: TMDB_API_KEY,
+      language: 'en-US',
+      sort_by: safeSort,
+      page: safePage,
+      include_adult: false,
+    };
+
+    if (genreId) {
+      tmdbParams.with_genres = genreId;
+    }
+    if (safeYear) {
+      tmdbParams.primary_release_year = safeYear;
+    }
+    if (indConfig) {
+      if (indConfig.tmdbFilters.with_original_language) {
+        tmdbParams.with_original_language = indConfig.tmdbFilters.with_original_language;
+      }
+      if (indConfig.tmdbFilters.with_origin_country) {
+        tmdbParams.with_origin_country = indConfig.tmdbFilters.with_origin_country;
+      }
+      if (indConfig.tmdbFilters.region) {
+        tmdbParams.region = indConfig.tmdbFilters.region;
+      }
+    }
+
+    const response = await tmdbClient.get('/discover/movie', { params: tmdbParams });
+    if (response.data?.results) {
+      registerDiscoveredMovies(response.data.results);
+      setInCache(cacheKey, response.data);
+      return response.data;
+    }
+  } catch (error) {
+    console.warn(`TMDB discover fallback notice: ${error.message}`);
+  }
+
+  // Resilient fallback filtering over local catalog
+  let filtered = [...seedMovies];
+
+  if (indConfig) {
+    const norm = indConfig.id;
+    filtered = filtered.filter((m) => {
+      const ind = (m.industry || '').toLowerCase();
+      const lang = (m.language || '').toLowerCase();
+      if (norm === 'tollywood') return ind === 'tollywood' || lang === 'telugu';
+      if (norm === 'bollywood') return ind === 'bollywood' || lang === 'hindi';
+      if (norm === 'hollywood') return ind === 'hollywood' || lang === 'english';
+      if (norm === 'kollywood') return ind === 'kollywood' || lang === 'tamil';
+      if (norm === 'sandalwood') return ind === 'sandalwood' || lang === 'kannada';
+      if (norm === 'mollywood') return ind === 'mollywood' || lang === 'malayalam';
+      return ind === norm;
+    });
+  }
+
+  if (genreId) {
+    const targetGenre = DEFAULT_GENRES.find((g) => String(g.id) === String(genreId))?.name.toLowerCase() || genreId.toLowerCase();
+    filtered = filtered.filter((m) => {
+      if (!Array.isArray(m.genres)) return false;
+      return m.genres.some((g) => {
+        if (typeof g === 'string') return g.toLowerCase() === targetGenre;
+        if (g && g.id) return String(g.id) === String(genreId);
+        if (g && g.name) return g.name.toLowerCase() === targetGenre;
+        return false;
+      });
+    });
+  }
+
+  if (safeYear) {
+    filtered = filtered.filter((m) => {
+      const release = m.release_date || `${m.release_year}-01-01`;
+      return release.startsWith(String(safeYear));
+    });
+  }
+
+  // Apply Sort
+  if (safeSort === 'vote_average.desc') {
+    filtered.sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
+  } else if (safeSort === 'vote_average.asc') {
+    filtered.sort((a, b) => (a.vote_average || 0) - (b.vote_average || 0));
+  } else if (safeSort === 'primary_release_date.desc') {
+    filtered.sort((a, b) => new Date(b.release_date || 0) - new Date(a.release_date || 0));
+  } else if (safeSort === 'primary_release_date.asc') {
+    filtered.sort((a, b) => new Date(a.release_date || 0) - new Date(b.release_date || 0));
+  } else if (safeSort === 'popularity.asc') {
+    filtered.sort((a, b) => (a.popularity || 0) - (b.popularity || 0));
+  } else {
+    filtered.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+  }
+
+  const fallback = getSeedPagination(filtered, safePage, 10);
+  registerDiscoveredMovies(fallback.results);
+  setInCache(cacheKey, fallback);
+  return fallback;
+};
+
+// 13. Industry / Category Movies (Tollywood, Bollywood, Hollywood, Kollywood, Sandalwood, Mollywood)
 export const getMoviesByIndustry = async (industry, page = 1) => {
   if (!industry) {
     return getPopularMovies(page);
   }
 
-  const normalized = industry.toLowerCase().trim();
-  const cacheKey = `industry_${normalized}_${page}`;
+  const indConfig = getIndustryConfig(industry);
+  const normalized = indConfig ? indConfig.id : industry.toLowerCase().trim();
+  const safePage = Math.max(1, Math.min(parseInt(page) || 1, 500));
+  const cacheKey = `industry_${normalized}_${safePage}`;
   const cached = getFromCache(cacheKey);
   if (cached) return cached;
 
-  // Filter seedMovies by industry or language or keywords
+  // Try live TMDB Discover with regional parameters first
+  if (indConfig) {
+    try {
+      const tmdbParams = {
+        api_key: TMDB_API_KEY,
+        language: 'en-US',
+        sort_by: 'popularity.desc',
+        page: safePage,
+        include_adult: false,
+        ...indConfig.tmdbFilters,
+      };
+
+      const response = await tmdbClient.get('/discover/movie', { params: tmdbParams });
+      if (response.data?.results?.length > 0) {
+        registerDiscoveredMovies(response.data.results);
+        setInCache(cacheKey, response.data);
+        return response.data;
+      }
+    } catch (error) {
+      console.warn(`TMDB industry discover fallback notice (${normalized}): ${error.message}`);
+    }
+  }
+
+  // Filter seedMovies by industry or language
   const matched = seedMovies.filter((m) => {
     const ind = (m.industry || '').toLowerCase();
     const lang = (m.language || '').toLowerCase();
@@ -511,16 +735,120 @@ export const getMoviesByIndustry = async (industry, page = 1) => {
     return ind.includes(normalized) || lang.includes(normalized);
   });
 
-  const fallbackIndustry = getSeedPagination(matched.length > 0 ? matched : seedMovies, page, 10);
+  const fallbackIndustry = getSeedPagination(matched.length > 0 ? matched : seedMovies, safePage, 10);
   registerDiscoveredMovies(fallbackIndustry.results);
   setInCache(cacheKey, fallbackIndustry);
   return fallbackIndustry;
+};
+
+// 14. Search People / Actors
+export const searchPeople = async (query, page = 1) => {
+  if (!query || !query.trim()) {
+    return { results: [], page: 1, total_pages: 0, total_results: 0 };
+  }
+
+  const safePage = Math.max(1, Math.min(parseInt(page) || 1, 500));
+  const cacheKey = `people_${encodeURIComponent(query.toLowerCase().trim())}_${safePage}`;
+  const cached = getFromCache(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const response = await tmdbClient.get('/search/person', {
+      params: {
+        api_key: TMDB_API_KEY,
+        language: 'en-US',
+        query,
+        page: safePage,
+        include_adult: false,
+      },
+    });
+
+    if (response.data?.results) {
+      setInCache(cacheKey, response.data, 60 * 1000);
+      return response.data;
+    }
+  } catch (error) {
+    console.warn(`TMDB people search fallback notice: ${error.message}`);
+  }
+
+  const q = query.toLowerCase().trim();
+  const matchedActors = [];
+  const seenIds = new Set();
+
+  seedMovies.forEach((m) => {
+    if (Array.isArray(m.cast)) {
+      m.cast.forEach((c) => {
+        const actorName = typeof c === 'string' ? c : c.name;
+        const actorId = typeof c === 'object' && c.id ? c.id : Math.abs(actorName.split('').reduce((a, b) => ((a << 5) - a) + b.charCodeAt(0), 0));
+        if (actorName && actorName.toLowerCase().includes(q) && !seenIds.has(actorId)) {
+          seenIds.add(actorId);
+          matchedActors.push({
+            id: actorId,
+            name: actorName,
+            known_for_department: 'Acting',
+            profile_path: (typeof c === 'object' && c.profile_path) ? c.profile_path : null,
+            known_for: [m],
+          });
+        }
+      });
+    }
+  });
+
+  const fallback = {
+    results: matchedActors.slice((safePage - 1) * 10, safePage * 10),
+    page: safePage,
+    total_pages: Math.max(1, Math.ceil(matchedActors.length / 10)),
+    total_results: matchedActors.length,
+  };
+  setInCache(cacheKey, fallback, 60 * 1000);
+  return fallback;
+};
+
+// 15. Get Movies by Actor / Person ID
+export const getPersonMovies = async (personId, page = 1) => {
+  const safePage = Math.max(1, Math.min(parseInt(page) || 1, 500));
+  const cacheKey = `person_movies_${personId}_${safePage}`;
+  const cached = getFromCache(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const response = await tmdbClient.get(`/person/${personId}/movie_credits`, {
+      params: { api_key: TMDB_API_KEY, language: 'en-US' },
+    });
+
+    const castMovies = response.data?.cast || [];
+    const sorted = [...castMovies].sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
+    registerDiscoveredMovies(sorted);
+
+    const paginated = getSeedPagination(sorted, safePage, 12);
+    setInCache(cacheKey, paginated);
+    return paginated;
+  } catch (error) {
+    console.warn(`TMDB person movies fallback notice: ${error.message}`);
+  }
+
+  // Filter seedMovies for this actor ID or name
+  const matched = seedMovies.filter((m) => {
+    if (!Array.isArray(m.cast)) return false;
+    return m.cast.some((c) => {
+      if (typeof c === 'object') return Number(c.id) === Number(personId);
+      return false;
+    });
+  });
+
+  const fallback = getSeedPagination(matched.length > 0 ? matched : seedMovies, safePage, 10);
+  registerDiscoveredMovies(fallback.results);
+  setInCache(cacheKey, fallback);
+  return fallback;
 };
 
 export default {
   getPopularMovies,
   getTopRatedMovies,
   getUpcomingMovies,
+  getNowPlayingMovies,
+  getGenres,
+  discoverMovies,
   getMovieDetails,
   getMovieCredits,
   getMovieVideos,
@@ -528,4 +856,6 @@ export default {
   searchMovies,
   getSimilarMovies,
   getMoviesByIndustry,
+  searchPeople,
+  getPersonMovies,
 };

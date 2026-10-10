@@ -3,6 +3,9 @@ import {
   getPopular,
   getTopRated,
   getUpcoming,
+  getNowPlaying,
+  getGenres,
+  discover,
   search,
   getMovieDetails,
   getMovieCast,
@@ -18,6 +21,9 @@ const router = express.Router();
 router.get('/popular', getPopular);
 router.get('/top-rated', getTopRated);
 router.get('/upcoming', getUpcoming);
+router.get('/now-playing', getNowPlaying);
+router.get('/genres', getGenres);
+router.get('/discover', discover);
 router.get('/search', search);
 router.get('/category/:industry', getByIndustry);
 router.get('/industry/:industry', getByIndustry);

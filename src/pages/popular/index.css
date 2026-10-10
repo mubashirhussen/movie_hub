@@ -44,6 +44,48 @@
   color: #a855f7;
 }
 
+.browse-icon-badge.compass {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+}
+
+.browse-icon-badge.actor {
+  background: rgba(244, 114, 182, 0.15);
+  color: #f472b6;
+}
+
+.actor-filter-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.25rem;
+  background: rgba(236, 72, 153, 0.1);
+  border: 1px solid rgba(236, 72, 153, 0.25);
+  border-radius: 12px;
+  color: #fce7f3;
+  font-size: 0.9rem;
+}
+
+.clear-actor-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: #ffffff;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.clear-actor-btn:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: #ef4444;
+}
+
 .browse-main-title {
   font-size: 2.25rem;
   font-weight: 900;

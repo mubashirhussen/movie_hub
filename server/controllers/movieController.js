@@ -5,10 +5,13 @@ import { getDBStatus } from '../config/db.js';
 // In-memory view count fallback
 const inMemoryViews = new Map();
 
+// Helper to sanitize page numbers safely between 1 and 500
+export const parseSafePage = (raw) => Math.max(1, Math.min(parseInt(raw) || 1, 500));
+
 // 1. Get Popular Movies
 export const getPopular = async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page) || 1;
+    const page = parseSafePage(req.query.page);
     const data = await tmdbService.getPopularMovies(page);
     return res.status(200).json({
       success: true,
@@ -22,7 +25,7 @@ export const getPopular = async (req, res, next) => {
 // 2. Get Top Rated Movies
 export const getTopRated = async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page) || 1;
+    const page = parseSafePage(req.query.page);
     const data = await tmdbService.getTopRatedMovies(page);
     return res.status(200).json({
       success: true,
@@ -36,7 +39,7 @@ export const getTopRated = async (req, res, next) => {
 // 3. Get Upcoming Movies
 export const getUpcoming = async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page) || 1;
+    const page = parseSafePage(req.query.page);
     const data = await tmdbService.getUpcomingMovies(page);
     return res.status(200).json({
       success: true,
@@ -51,7 +54,7 @@ export const getUpcoming = async (req, res, next) => {
 export const search = async (req, res, next) => {
   try {
     const query = req.query.query || '';
-    const page = parseInt(req.query.page) || 1;
+    const page = parseSafePage(req.query.page);
     const data = await tmdbService.searchMovies(query, page);
     return res.status(200).json({
       success: true,
@@ -205,8 +208,58 @@ export const incrementMovieView = async (req, res, next) => {
 export const getByIndustry = async (req, res, next) => {
   try {
     const industry = req.params.industry || req.query.industry || 'Tollywood';
-    const page = parseInt(req.query.page) || 1;
+    const page = parseSafePage(req.query.page);
     const data = await tmdbService.getMoviesByIndustry(industry, page);
+    return res.status(200).json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 12. Get Now Playing Movies
+export const getNowPlaying = async (req, res, next) => {
+  try {
+    const page = parseSafePage(req.query.page);
+    const data = await tmdbService.getNowPlayingMovies(page);
+    return res.status(200).json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 13. Get Movie Genres
+export const getGenres = async (req, res, next) => {
+  try {
+    const data = await tmdbService.getGenres();
+    return res.status(200).json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 14. Discover Movies (Genre, Year, Industry, Sorting, Pagination)
+export const discover = async (req, res, next) => {
+  try {
+    const { genre, sortBy, year, industry } = req.query;
+    const page = parseSafePage(req.query.page);
+
+    const data = await tmdbService.discoverMovies({
+      genre: genre ? String(genre).trim() : null,
+      sortBy: sortBy ? String(sortBy).trim() : 'popularity.desc',
+      year: year ? parseInt(year) : null,
+      industry: industry ? String(industry).trim() : null,
+      page,
+    });
+
     return res.status(200).json({
       success: true,
       data,
@@ -220,6 +273,9 @@ export default {
   getPopular,
   getTopRated,
   getUpcoming,
+  getNowPlaying,
+  getGenres,
+  discover,
   search,
   getMovieDetails,
   getMovieCast,
