@@ -12,6 +12,7 @@ import {
   getMovieTrailer,
   getMovieProviders,
   getSimilarMovies,
+  getMovieRecommendations,
   incrementMovieView,
   getByIndustry,
 } from '../controllers/movieController.js';
@@ -29,9 +30,12 @@ router.get('/category/:industry', getByIndustry);
 router.get('/industry/:industry', getByIndustry);
 router.get('/:id', getMovieDetails);
 router.get('/:id/cast', getMovieCast);
+router.get('/:id/credits', getMovieCast);
 router.get('/:id/trailer', getMovieTrailer);
+router.get('/:id/videos', getMovieTrailer);
 router.get('/:id/providers', getMovieProviders);
 router.get('/:id/similar', getSimilarMovies);
+router.get('/:id/recommendations', getMovieRecommendations);
 router.post('/:id/view', incrementMovieView);
 
 export default router;

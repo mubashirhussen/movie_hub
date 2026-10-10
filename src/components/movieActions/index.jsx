@@ -1,16 +1,40 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Play, Film, Bookmark, Heart, Share2 } from 'lucide-react';
 import { useMovies } from '../../hooks/useMovies';
 import './index.css';
 
 const MovieActions = ({ movie, onWatchMovie, onPreviewTrailer, onShare, onDownload }) => {
+  const navigate = useNavigate();
   const { isMovieInWatchlist, isMovieInFavorites, toggleWatchlist, toggleFavorite } = useMovies();
+  const [updatingWL, setUpdatingWL] = useState(false);
+  const [updatingFav, setUpdatingFav] = useState(false);
 
   if (!movie) return null;
 
   const movieId = movie.id || movie.movieId;
   const inWatchlist = isMovieInWatchlist(movieId);
   const inFavorites = isMovieInFavorites(movieId);
+
+  const handleWatchlistClick = async () => {
+    if (updatingWL) return;
+    setUpdatingWL(true);
+    const res = await toggleWatchlist(movie);
+    setUpdatingWL(false);
+    if (res?.requireAuth) {
+      navigate('/login');
+    }
+  };
+
+  const handleFavoriteClick = async () => {
+    if (updatingFav) return;
+    setUpdatingFav(true);
+    const res = await toggleFavorite(movie);
+    setUpdatingFav(false);
+    if (res?.requireAuth) {
+      navigate('/login');
+    }
+  };
 
   return (
     <div className="cineverse-actions-toolbar">
@@ -58,7 +82,8 @@ const MovieActions = ({ movie, onWatchMovie, onPreviewTrailer, onShare, onDownlo
       <button
         type="button"
         className={`btn-action-glass ${inWatchlist ? 'active-watchlist' : ''}`}
-        onClick={() => toggleWatchlist(movie)}
+        onClick={handleWatchlistClick}
+        disabled={updatingWL}
         title={inWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
         id="btn-toggle-watchlist"
       >
@@ -70,7 +95,8 @@ const MovieActions = ({ movie, onWatchMovie, onPreviewTrailer, onShare, onDownlo
       <button
         type="button"
         className={`btn-action-glass ${inFavorites ? 'active-favorite' : ''}`}
-        onClick={() => toggleFavorite(movie)}
+        onClick={handleFavoriteClick}
+        disabled={updatingFav}
         title={inFavorites ? 'Remove from Favorites' : 'Add to Favorites'}
         id="btn-toggle-favorite"
       >

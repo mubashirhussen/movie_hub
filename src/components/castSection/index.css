@@ -1,8 +1,23 @@
-.cineverse-cast-section {
+.cineverse-credits-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  margin: 3rem 0;
+}
+
+.cineverse-cast-section,
+.cineverse-crew-section {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  margin: 3rem 0;
+}
+
+.section-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .section-title-wrap {
@@ -15,14 +30,49 @@
   color: #ec4899;
 }
 
+.crew-icon {
+  color: #a855f7;
+}
+
 .section-title-text {
   font-size: 1.45rem;
   font-weight: 800;
   color: #ffffff;
   letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.cast-cards-grid {
+.count-tag {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.btn-view-all-cast {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #e2e8f0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-view-all-cast:hover {
+  background: rgba(236, 72, 153, 0.15);
+  border-color: rgba(236, 72, 153, 0.4);
+  color: #f472b6;
+}
+
+.cast-cards-grid,
+.crew-cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 1rem;

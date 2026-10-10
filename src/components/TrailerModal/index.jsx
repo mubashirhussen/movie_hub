@@ -4,6 +4,13 @@ import { X, Film, AlertCircle } from 'lucide-react';
 import './index.css';
 
 const TrailerModal = ({ isOpen, onClose, videoKey, title = 'Movie Trailer' }) => {
+  const closeBtnRef = React.useRef(null);
+  const isValidKey = Boolean(
+    videoKey &&
+    typeof videoKey === 'string' &&
+    /^[a-zA-Z0-9_-]{6,20}$/.test(videoKey.trim())
+  );
+
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') onClose();
@@ -12,6 +19,7 @@ const TrailerModal = ({ isOpen, onClose, videoKey, title = 'Movie Trailer' }) =>
     if (isOpen) {
       document.body.style.overflow = 'hidden';
       window.addEventListener('keydown', handleKeyDown);
+      setTimeout(() => closeBtnRef.current?.focus(), 50);
     }
 
     return () => {
@@ -38,6 +46,7 @@ const TrailerModal = ({ isOpen, onClose, videoKey, title = 'Movie Trailer' }) =>
             <span className="modal-title-text">{title} - Official Trailer</span>
           </div>
           <button
+            ref={closeBtnRef}
             type="button"
             className="modal-close-btn"
             onClick={onClose}
@@ -49,9 +58,9 @@ const TrailerModal = ({ isOpen, onClose, videoKey, title = 'Movie Trailer' }) =>
 
         {/* Video Player Embed */}
         <div className="trailer-iframe-wrapper">
-          {videoKey ? (
+          {isValidKey ? (
             <iframe
-              src={`https://www.youtube-nocookie.com/embed/${videoKey}?autoplay=1&rel=0&modestbranding=1`}
+              src={`https://www.youtube-nocookie.com/embed/${videoKey.trim()}?autoplay=0&rel=0&modestbranding=1`}
               title={`${title} Trailer`}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
@@ -60,7 +69,7 @@ const TrailerModal = ({ isOpen, onClose, videoKey, title = 'Movie Trailer' }) =>
           ) : (
             <div className="trailer-unavailable-box">
               <AlertCircle size={36} color="#f87171" />
-              <p>Trailer is currently unavailable for this title.</p>
+              <p>Official trailer is currently unavailable for this title.</p>
             </div>
           )}
         </div>

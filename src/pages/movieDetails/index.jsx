@@ -14,7 +14,8 @@ import {
   Download,
   Server,
   Sparkles,
-  ExternalLink
+  Building2,
+  Flag
 } from 'lucide-react';
 import { getImageUrl, getBackdropUrl } from '../../utils/imageUrl';
 import { formatDate } from '../../utils/formatDate';
@@ -44,7 +45,9 @@ const MovieDetails = () => {
   const [activePlayerKey, setActivePlayerKey] = useState(null);
   const [selectedServer, setSelectedServer] = useState('yt-hd');
   const [providers, setProviders] = useState(null);
+  const [selectedRegion, setSelectedRegion] = useState('IN');
   const [similarMovies, setSimilarMovies] = useState([]);
+  const [recommendations, setRecommendations] = useState([]);
   const [trailerOpen, setTrailerOpen] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -53,14 +56,22 @@ const MovieDetails = () => {
   const { isAuthenticated } = useAuth();
 
   const fetchMovieDetails = async () => {
-    if (!movieId) return;
+    if (!movieId || isNaN(movieId)) {
+      setError('Invalid movie ID provided');
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     window.scrollTo({ top: 0, behavior: 'instant' });
 
     try {
-      // 1. Fetch movie details & increment views
+      // 1. Fetch primary movie details & increment views
       const movieData = await movieService.getMovieDetails(movieId);
+      if (!movieData || !movieData.id) {
+        throw new Error('Movie not found');
+      }
       setMovie(movieData);
 
       // Track view asynchronously
@@ -71,16 +82,21 @@ const MovieDetails = () => {
         authService.addToHistory(movieId, movieData.title, movieData.poster_path).catch(() => {});
       }
 
-      // 2. Fetch credits, trailer, providers, similar in parallel
-      const [creditsData, trailerData, providersData, similarData] = await Promise.allSettled([
+      // 2. Fetch credits, trailer, providers, similar, and recommendations in parallel
+      const [creditsData, trailerData, providersData, similarData, recsData] = await Promise.allSettled([
         movieService.getMovieCast(movieId),
         movieService.getMovieTrailer(movieId),
-        movieService.getMovieProviders(movieId),
+        movieService.getMovieProviders(movieId, selectedRegion),
         movieService.getSimilarMovies(movieId, 1),
+        movieService.getMovieRecommendations(movieId, 1),
       ]);
 
-      if (creditsData.status === 'fulfilled') setCredits(creditsData.value);
-      
+      if (creditsData.status === 'fulfilled') {
+        setCredits(creditsData.value);
+      } else {
+        setCredits({ cast: [], crew: [] });
+      }
+
       const tKey =
         (trailerData.status === 'fulfilled' && trailerData.value?.trailer?.key) ||
         movieData.trailer_key ||
@@ -90,9 +106,28 @@ const MovieDetails = () => {
       setTrailerKey(tKey);
       setActivePlayerKey(tKey);
 
-      if (providersData.status === 'fulfilled') setProviders(providersData.value);
+      if (providersData.status === 'fulfilled') {
+        setProviders(providersData.value);
+      } else {
+        setProviders({ region: selectedRegion, flatrate: [], rent: [], buy: [] });
+      }
+
       if (similarData.status === 'fulfilled') {
-        setSimilarMovies(similarData.value?.results || []);
+        const rawSimilar = similarData.value?.results || [];
+        // Exclude current movie and duplicates
+        const filteredSimilar = rawSimilar.filter((m) => Number(m.id) !== Number(movieId));
+        setSimilarMovies(filteredSimilar);
+      } else {
+        setSimilarMovies([]);
+      }
+
+      if (recsData.status === 'fulfilled') {
+        const rawRecs = recsData.value?.results || [];
+        // Exclude current movie and duplicates
+        const filteredRecs = rawRecs.filter((m) => Number(m.id) !== Number(movieId));
+        setRecommendations(filteredRecs);
+      } else {
+        setRecommendations([]);
       }
     } catch (err) {
       setError(err.message || 'Unable to load movie details');
@@ -105,13 +140,25 @@ const MovieDetails = () => {
     fetchMovieDetails();
   }, [movieId]);
 
+  const handleRegionChange = async (newRegion) => {
+    setSelectedRegion(newRegion);
+    try {
+      const updated = await movieService.getMovieProviders(movieId, newRegion);
+      setProviders(updated);
+    } catch (err) {
+      console.warn('Failed to fetch providers for region', newRegion, err.message);
+    }
+  };
+
   const handleShare = () => {
     if (navigator.share) {
-      navigator.share({
-        title: movie?.title,
-        text: `Watch ${movie?.title} on CineVerse!`,
-        url: window.location.href,
-      }).catch(() => {});
+      navigator
+        .share({
+          title: movie?.title,
+          text: `Watch ${movie?.title} on CineVerse!`,
+          url: window.location.href,
+        })
+        .catch(() => {});
     } else {
       navigator.clipboard.writeText(window.location.href);
       alert('Movie link copied to clipboard!');
@@ -138,14 +185,39 @@ const MovieDetails = () => {
   }
 
   if (error || !movie) {
-    return <ErrorMessage message={error || 'Movie not found.'} onRetry={fetchMovieDetails} />;
+    return (
+      <div className="cineverse-movie-details-error container">
+        <ErrorMessage
+          message={error || 'Movie not found.'}
+          onRetry={fetchMovieDetails}
+        />
+        <div className="error-back-home-wrap">
+          <Link to="/" className="btn-error-home">
+            <ArrowLeft size={16} />
+            <span>Return to Discovery Home</span>
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   const posterUrl = getImageUrl(movie.poster_path);
   const backdropUrl = getBackdropUrl(movie.backdrop_path || movie.poster_path);
   const rating = formatRating(movie.vote_average);
   const releaseDate = formatDate(movie.release_date);
+  const releaseYear = movie.release_date ? new Date(movie.release_date).getFullYear() : null;
   const runtime = formatRuntime(movie.runtime);
+  const hasOriginalTitle =
+    movie.original_title &&
+    movie.original_title.trim().toLowerCase() !== movie.title.trim().toLowerCase();
+
+  const productionCountries = Array.isArray(movie.production_countries)
+    ? movie.production_countries.map((c) => c.name).filter(Boolean)
+    : [];
+
+  const productionCompanies = Array.isArray(movie.production_companies)
+    ? movie.production_companies.map((c) => c.name).filter(Boolean)
+    : [];
 
   return (
     <div className="cineverse-movie-details-page">
@@ -184,6 +256,11 @@ const MovieDetails = () => {
           <div className="detail-info-pane">
             <div className="detail-title-group">
               <h1 className="detail-main-title">{movie.title}</h1>
+              {hasOriginalTitle && (
+                <p className="detail-original-title">
+                  Original Title: <span>{movie.original_title}</span>
+                </p>
+              )}
               {movie.tagline && <p className="detail-tagline">"{movie.tagline}"</p>}
             </div>
 
@@ -211,7 +288,9 @@ const MovieDetails = () => {
               {movie.release_date && (
                 <div className="meta-badge">
                   <Calendar size={15} />
-                  <span>{releaseDate}</span>
+                  <span>
+                    {releaseDate} {releaseYear ? `(${releaseYear})` : ''}
+                  </span>
                 </div>
               )}
 
@@ -233,7 +312,12 @@ const MovieDetails = () => {
             )}
 
             {/* Where to Watch Providers */}
-            <ProviderLinks providersData={providers} movieTitle={movie.title} />
+            <ProviderLinks
+              providersData={providers}
+              movieTitle={movie.title}
+              currentRegion={selectedRegion}
+              onRegionChange={handleRegionChange}
+            />
 
             {/* Actions Toolbar */}
             <MovieActions
@@ -252,19 +336,25 @@ const MovieDetails = () => {
               </p>
             </div>
 
-            {/* Budget and Box Office Financials Card */}
-            <div className="financials-metrics-box">
-              <div className="metric-col">
-                <span className="metric-label">BUDGET</span>
-                <span className="metric-value">{formatCurrency(movie.budget, false)}</span>
+            {/* Reliable Budget and Box Office Financials Card (only displayed when verified > 0) */}
+            {(movie.budget > 0 || movie.revenue > 0) && (
+              <div className="financials-metrics-box">
+                {movie.budget > 0 && (
+                  <div className="metric-col">
+                    <span className="metric-label">BUDGET</span>
+                    <span className="metric-value">{formatCurrency(movie.budget, false)}</span>
+                  </div>
+                )}
+                {movie.revenue > 0 && (
+                  <div className="metric-col">
+                    <span className="metric-label">BOX OFFICE</span>
+                    <span className="metric-value box-office-glow">
+                      {formatCurrency(movie.revenue, true)}
+                    </span>
+                  </div>
+                )}
               </div>
-              <div className="metric-col">
-                <span className="metric-label">BOX OFFICE</span>
-                <span className="metric-value box-office-glow">
-                  {formatCurrency(movie.revenue, true)}
-                </span>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </section>
@@ -400,19 +490,60 @@ const MovieDetails = () => {
               <span className="meta-card-val">{formatViews(movie.applicationViews)}</span>
             </div>
           </div>
+
+          {productionCountries.length > 0 && (
+            <div className="meta-info-card">
+              <Flag size={18} className="meta-icon" />
+              <div className="meta-card-body">
+                <span className="meta-card-label">Production Countries</span>
+                <span className="meta-card-val">{productionCountries.join(', ')}</span>
+              </div>
+            </div>
+          )}
+
+          {productionCompanies.length > 0 && (
+            <div className="meta-info-card">
+              <Building2 size={18} className="meta-icon" />
+              <div className="meta-card-body">
+                <span className="meta-card-label">Production Companies</span>
+                <span className="meta-card-val">{productionCompanies.slice(0, 2).join(', ')}</span>
+              </div>
+            </div>
+          )}
         </section>
 
-        {/* Cast and Characters Section */}
-        <CastSection cast={credits?.cast || []} loading={loading} />
+        {/* Cast and Characters & Key Crew Section */}
+        <CastSection
+          cast={credits?.cast || []}
+          crew={credits?.crew || []}
+          loading={loading}
+        />
 
-        {/* Similar Movies / More Like This */}
+        {/* Section 1: Similar Movies */}
         {similarMovies && similarMovies.length > 0 && (
           <section className="similar-movies-section animate-fade-in">
             <div className="similar-header-row">
               <Film size={20} className="similar-icon" />
-              <h2 className="similar-title">More Like This</h2>
+              <div className="similar-title-wrap">
+                <h2 className="similar-title">Similar Movies</h2>
+                <p className="similar-subtitle">Titles with comparable themes, tone, and genres</p>
+              </div>
             </div>
-            <MovieGrid movies={similarMovies.slice(0, 5)} />
+            <MovieGrid movies={similarMovies.slice(0, 10)} />
+          </section>
+        )}
+
+        {/* Section 2: Recommended Movies */}
+        {recommendations && recommendations.length > 0 && (
+          <section className="recommended-movies-section animate-fade-in">
+            <div className="similar-header-row">
+              <Sparkles size={20} className="recs-icon" />
+              <div className="similar-title-wrap">
+                <h2 className="similar-title">Recommended Movies</h2>
+                <p className="similar-subtitle">Curated recommendations based on viewer preferences</p>
+              </div>
+            </div>
+            <MovieGrid movies={recommendations.slice(0, 10)} />
           </section>
         )}
       </div>

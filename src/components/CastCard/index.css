@@ -1,3 +1,9 @@
+.cineverse-cast-card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
 .cineverse-cast-card {
   display: flex;
   flex-direction: column;

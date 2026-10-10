@@ -69,7 +69,7 @@ export const search = async (req, res, next) => {
 export const getMovieDetails = async (req, res, next) => {
   try {
     const movieId = parseInt(req.params.id);
-    if (!movieId) {
+    if (!movieId || isNaN(movieId)) {
       return res.status(400).json({
         success: false,
         message: 'Invalid movie ID provided',
@@ -77,6 +77,12 @@ export const getMovieDetails = async (req, res, next) => {
     }
 
     const movie = await tmdbService.getMovieDetails(movieId);
+    if (!movie) {
+      return res.status(404).json({
+        success: false,
+        message: 'Movie not found',
+      });
+    }
 
     // Retrieve application views
     let appViews = 1;
@@ -103,6 +109,12 @@ export const getMovieDetails = async (req, res, next) => {
 export const getMovieCast = async (req, res, next) => {
   try {
     const movieId = parseInt(req.params.id);
+    if (!movieId || isNaN(movieId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid movie ID provided',
+      });
+    }
     const credits = await tmdbService.getMovieCredits(movieId);
     return res.status(200).json({
       success: true,
@@ -117,6 +129,12 @@ export const getMovieCast = async (req, res, next) => {
 export const getMovieTrailer = async (req, res, next) => {
   try {
     const movieId = parseInt(req.params.id);
+    if (!movieId || isNaN(movieId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid movie ID provided',
+      });
+    }
     const videos = await tmdbService.getMovieVideos(movieId);
 
     const trailer =
@@ -140,7 +158,14 @@ export const getMovieTrailer = async (req, res, next) => {
 export const getMovieProviders = async (req, res, next) => {
   try {
     const movieId = parseInt(req.params.id);
-    const providers = await tmdbService.getWatchProviders(movieId);
+    if (!movieId || isNaN(movieId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid movie ID provided',
+      });
+    }
+    const region = (req.query.region || 'IN').toUpperCase();
+    const providers = await tmdbService.getWatchProviders(movieId, region);
     return res.status(200).json({
       success: true,
       data: providers,
@@ -154,11 +179,38 @@ export const getMovieProviders = async (req, res, next) => {
 export const getSimilarMovies = async (req, res, next) => {
   try {
     const movieId = parseInt(req.params.id);
+    if (!movieId || isNaN(movieId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid movie ID provided',
+      });
+    }
     const page = parseInt(req.query.page) || 1;
     const similar = await tmdbService.getSimilarMovies(movieId, page);
     return res.status(200).json({
       success: true,
       data: similar,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 9b. Get Recommendations
+export const getMovieRecommendations = async (req, res, next) => {
+  try {
+    const movieId = parseInt(req.params.id);
+    if (!movieId || isNaN(movieId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid movie ID provided',
+      });
+    }
+    const page = parseInt(req.query.page) || 1;
+    const recommendations = await tmdbService.getRecommendations(movieId, page);
+    return res.status(200).json({
+      success: true,
+      data: recommendations,
     });
   } catch (error) {
     next(error);

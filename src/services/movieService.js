@@ -43,7 +43,10 @@ export const getMovieDetails = async (movieId, options = {}) => {
 export const getMovieCast = async (movieId, options = {}) => {
   const response = await api.get(`/movies/${movieId}/cast`, options);
   const payload = response.data?.data ?? response.data;
-  return payload?.cast ? payload : { cast: Array.isArray(payload) ? payload : [] };
+  return {
+    cast: Array.isArray(payload?.cast) ? payload.cast : (Array.isArray(payload) ? payload : []),
+    crew: Array.isArray(payload?.crew) ? payload.crew : [],
+  };
 };
 
 export const getMovieTrailer = async (movieId, options = {}) => {
@@ -52,8 +55,11 @@ export const getMovieTrailer = async (movieId, options = {}) => {
   return payload;
 };
 
-export const getMovieProviders = async (movieId, options = {}) => {
-  const response = await api.get(`/movies/${movieId}/providers`, options);
+export const getMovieProviders = async (movieId, region = 'IN', options = {}) => {
+  const response = await api.get(`/movies/${movieId}/providers`, {
+    params: { region },
+    ...options,
+  });
   const payload = response.data?.data ?? response.data;
   return payload;
 };
@@ -61,6 +67,11 @@ export const getMovieProviders = async (movieId, options = {}) => {
 export const getSimilarMovies = async (movieId, page = 1, options = {}) => {
   const response = await api.get(`/movies/${movieId}/similar`, { params: { page }, ...options });
   return unwrapMovieResponse(response, `/movies/${movieId}/similar`);
+};
+
+export const getMovieRecommendations = async (movieId, page = 1, options = {}) => {
+  const response = await api.get(`/movies/${movieId}/recommendations`, { params: { page }, ...options });
+  return unwrapMovieResponse(response, `/movies/${movieId}/recommendations`);
 };
 
 export const getMoviesByIndustry = async (industry, page = 1, options = {}) => {
@@ -130,6 +141,7 @@ export default {
   getMovieTrailer,
   getMovieProviders,
   getSimilarMovies,
+  getMovieRecommendations,
   getMoviesByIndustry,
   trackMovieView,
 };

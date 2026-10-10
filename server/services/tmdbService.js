@@ -228,7 +228,11 @@ export const getMovieDetails = async (movieId) => {
   // Fallback to seedMovies or discovered movie record
   const foundInSeed = seedMovies.find((m) => Number(m.id) === Number(movieId));
   const foundInDiscovered = discoveredMoviesMap.get(Number(movieId));
-  const found = foundInSeed || foundInDiscovered || seedMovies[0];
+  const found = foundInSeed || foundInDiscovered;
+
+  if (!found) {
+    return null;
+  }
 
   const ytRef = curatedYouTubeLibrary[movieId] || curatedYouTubeLibrary[found.id] || {};
   const ytKey = found.trailer_key || ytRef.trailer || 'NgBoMJy386M';
@@ -237,6 +241,7 @@ export const getMovieDetails = async (movieId) => {
     ...found,
     id: movieId || found.id,
     title: found.title || 'Featured Film',
+    original_title: found.original_title || found.title || 'Original Title',
     tagline: found.tagline || 'Experience the cinema magic in high definition.',
     overview: found.overview || 'An extraordinary journey full of thrilling moments, emotion, and grand cinematic spectacle.',
     poster_path: found.poster_path || '/t2yyOv40HZeVlLjYsCsPHnWLk4W.jpg',
@@ -245,8 +250,16 @@ export const getMovieDetails = async (movieId) => {
     vote_count: found.vote_count || 3200,
     release_date: found.release_date || '2024-01-01',
     runtime: found.runtime || 145,
-    budget: found.budget || 50000000,
-    revenue: found.revenue || 180000000,
+    budget: found.budget || 0,
+    revenue: found.revenue || 0,
+    original_language: found.original_language || 'en',
+    production_countries: found.production_countries || [
+      { iso_3166_1: 'IN', name: 'India' },
+      { iso_3166_1: 'US', name: 'United States' },
+    ],
+    production_companies: found.production_companies || [
+      { id: 1, name: 'CineVerse Pictures', logo_path: null, origin_country: 'IN' },
+    ],
     genres: Array.isArray(found.genres)
       ? found.genres.map((g, idx) => (typeof g === 'string' ? { id: idx + 1, name: g } : g))
       : [{ id: 1, name: 'Action' }, { id: 2, name: 'Adventure' }, { id: 3, name: 'Drama' }],
@@ -275,9 +288,23 @@ export const getMovieDetails = async (movieId) => {
         name: c.name || c.actor || 'Actor',
         character: c.character || 'Leading Role',
         profile_path: c.profile_path || null,
+        order: i,
+      })),
+      crew: (found.crew && found.crew.length > 0 ? found.crew : [
+        { id: 101, name: 'Director', job: 'Director', department: 'Directing', profile_path: null },
+        { id: 102, name: 'Screenplay Writer', job: 'Screenplay', department: 'Writing', profile_path: null },
+        { id: 103, name: 'Lead Producer', job: 'Producer', department: 'Production', profile_path: null },
+        { id: 104, name: 'Cinematographer', job: 'Director of Photography', department: 'Camera', profile_path: null },
+        { id: 105, name: 'Music Composer', job: 'Original Music Composer', department: 'Sound', profile_path: null },
+      ]).map((cr, i) => ({
+        id: cr.id || i + 100,
+        name: cr.name || 'Crew Member',
+        job: cr.job || 'Crew',
+        department: cr.department || 'Production',
+        profile_path: cr.profile_path || null,
       })),
     },
-    status: 'Released',
+    status: found.status || 'Released',
     applicationViews: 18200,
   };
 
@@ -285,7 +312,7 @@ export const getMovieDetails = async (movieId) => {
   return formattedDetail;
 };
 
-// 5. Cast and Credits
+// 5. Cast and Credits (Includes Cast and Crew)
 export const getMovieCredits = async (movieId) => {
   const cacheKey = `credits_${movieId}`;
   const cached = getFromCache(cacheKey);
@@ -319,6 +346,20 @@ export const getMovieCredits = async (movieId) => {
       name: c.name || c.actor || 'Actor',
       character: c.character || 'Main Character',
       profile_path: c.profile_path || null,
+      order: i,
+    })),
+    crew: (found.crew && found.crew.length > 0 ? found.crew : [
+      { id: 101, name: 'Director', job: 'Director', department: 'Directing', profile_path: null },
+      { id: 102, name: 'Screenplay Writer', job: 'Screenplay', department: 'Writing', profile_path: null },
+      { id: 103, name: 'Lead Producer', job: 'Producer', department: 'Production', profile_path: null },
+      { id: 104, name: 'Cinematographer', job: 'Director of Photography', department: 'Camera', profile_path: null },
+      { id: 105, name: 'Music Composer', job: 'Original Music Composer', department: 'Sound', profile_path: null },
+    ]).map((cr, i) => ({
+      id: cr.id || i + 100,
+      name: cr.name || 'Crew Member',
+      job: cr.job || 'Crew',
+      department: cr.department || 'Production',
+      profile_path: cr.profile_path || null,
     })),
   };
 
@@ -361,9 +402,10 @@ export const getMovieVideos = async (movieId) => {
   return videosData;
 };
 
-// 7. Watch Providers
-export const getWatchProviders = async (movieId) => {
-  const cacheKey = `providers_${movieId}`;
+// 7. Watch Providers (Region-aware with verified TMDB data)
+export const getWatchProviders = async (movieId, requestedRegion = 'IN') => {
+  const region = (requestedRegion || 'IN').toUpperCase();
+  const cacheKey = `providers_${movieId}_${region}`;
   const cached = getFromCache(cacheKey);
   if (cached) return cached;
 
@@ -373,35 +415,47 @@ export const getWatchProviders = async (movieId) => {
     });
 
     const results = response.data?.results || {};
-    const inRegion = results.IN || results.US || results.GB || Object.values(results)[0] || null;
+    const regionData = results[region] || null;
 
-    if (inRegion) {
-      setInCache(cacheKey, inRegion);
-      return inRegion;
+    if (regionData) {
+      const formatted = {
+        region,
+        link: regionData.link || 'https://www.themoviedb.org',
+        flatrate: Array.isArray(regionData.flatrate) ? regionData.flatrate : [],
+        rent: Array.isArray(regionData.rent) ? regionData.rent : [],
+        buy: Array.isArray(regionData.buy) ? regionData.buy : [],
+        availableRegions: Object.keys(results),
+      };
+      setInCache(cacheKey, formatted);
+      return formatted;
+    } else {
+      // Region not available on TMDB for this title
+      const emptyResult = {
+        region,
+        link: results['US']?.link || results['IN']?.link || results[Object.keys(results)[0]]?.link || 'https://www.themoviedb.org',
+        flatrate: [],
+        rent: [],
+        buy: [],
+        availableRegions: Object.keys(results),
+      };
+      setInCache(cacheKey, emptyResult);
+      return emptyResult;
     }
   } catch (error) {
-    console.warn(`TMDB watch providers fallback notice: ${error.message}`);
+    console.warn(`TMDB watch providers notice: ${error.message}`);
   }
 
-  const foundInSeed = seedMovies.find((m) => Number(m.id) === Number(movieId));
-  const found = foundInSeed || discoveredMoviesMap.get(Number(movieId)) || seedMovies[0];
-  const providerNames = found.stream_providers || ['Netflix', 'Amazon Prime Video', 'Disney+ Hotstar'];
-
-  const fallbackProviders = {
+  // Graceful empty fallback - do not fabricate providers when none verified
+  const emptyFallback = {
+    region,
     link: 'https://www.themoviedb.org',
-    flatrate: providerNames.map((name, i) => ({
-      provider_id: i + 1,
-      provider_name: name,
-      logo_path: name.includes('Netflix')
-        ? '/t2yyOv40HZeVlLjYsCsPHnWLk4W.jpg'
-        : name.includes('Prime')
-        ? '/emthp39XA2zhcoYLKJgaflueQvC.jpg'
-        : '/7rwgEs55tOXyYWR415mU2m4wO8B.jpg',
-    })),
+    flatrate: [],
+    rent: [],
+    buy: [],
+    availableRegions: [],
   };
-
-  setInCache(cacheKey, fallbackProviders);
-  return fallbackProviders;
+  setInCache(cacheKey, emptyFallback);
+  return emptyFallback;
 };
 
 // 8. Search Movies
@@ -473,6 +527,35 @@ export const getSimilarMovies = async (movieId, page = 1) => {
   registerDiscoveredMovies(fallbackSimilar.results);
   setInCache(cacheKey, fallbackSimilar);
   return fallbackSimilar;
+};
+
+// 9b. Recommendations (Distinct algorithm & endpoint from similar)
+export const getRecommendations = async (movieId, page = 1) => {
+  const cacheKey = `recommendations_${movieId}_${page}`;
+  const cached = getFromCache(cacheKey);
+  if (cached) return cached;
+
+  try {
+    const response = await tmdbClient.get(`/movie/${movieId}/recommendations`, {
+      params: { api_key: TMDB_API_KEY, language: 'en-US', page },
+    });
+
+    if (response.data?.results?.length > 0) {
+      registerDiscoveredMovies(response.data.results);
+      setInCache(cacheKey, response.data);
+      return response.data;
+    }
+  } catch (error) {
+    console.warn(`TMDB recommendations fallback notice: ${error.message}`);
+  }
+
+  // Fallback: exclude current movie and sort by rating/popularity for distinction
+  const filtered = seedMovies.filter((m) => Number(m.id) !== Number(movieId));
+  const sorted = [...filtered].sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
+  const fallbackRecs = getSeedPagination(sorted, page, 6);
+  registerDiscoveredMovies(fallbackRecs.results);
+  setInCache(cacheKey, fallbackRecs);
+  return fallbackRecs;
 };
 
 // 10. Now Playing Movies
@@ -855,6 +938,7 @@ export default {
   getWatchProviders,
   searchMovies,
   getSimilarMovies,
+  getRecommendations,
   getMoviesByIndustry,
   searchPeople,
   getPersonMovies,
