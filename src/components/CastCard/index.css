@@ -1,0 +1,70 @@
+.cineverse-cast-card {
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  background: #121625;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  min-width: 140px;
+}
+
+.cineverse-cast-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+  border-color: rgba(139, 92, 246, 0.35);
+}
+
+.cast-photo-frame {
+  width: 100%;
+  aspect-ratio: 1 / 1.25;
+  background: #1a2035;
+  position: relative;
+  overflow: hidden;
+}
+
+.cast-photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cast-avatar-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  background: #161b2e;
+}
+
+.cast-info-block {
+  padding: 0.75rem 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.cast-actor-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cast-character-role {
+  font-size: 0.74rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.as-label {
+  color: #64748b;
+  font-style: italic;
+}

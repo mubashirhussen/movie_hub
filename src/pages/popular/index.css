@@ -1,0 +1,59 @@
+.cineverse-browse-page {
+  padding: 3rem 1.5rem 5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  min-height: 80vh;
+}
+
+.browse-header-banner {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.browse-icon-badge {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.browse-icon-badge.flame {
+  background: rgba(236, 72, 153, 0.15);
+  color: #ec4899;
+}
+
+.browse-icon-badge.star {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+}
+
+.browse-icon-badge.calendar {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+}
+
+.browse-icon-badge.search {
+  background: rgba(139, 92, 246, 0.15);
+  color: #a855f7;
+}
+
+.browse-main-title {
+  font-size: 2.25rem;
+  font-weight: 900;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.browse-subtitle {
+  font-size: 0.92rem;
+  color: #94a3b8;
+  margin-top: 0.25rem;
+}

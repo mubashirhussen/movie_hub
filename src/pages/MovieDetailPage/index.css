@@ -1,0 +1,23 @@
+.movie-detail-page-wrapper {
+  min-height: 85vh;
+}
+
+.detail-top-nav-bar {
+  background: rgba(14, 17, 30, 0.6);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0.6rem 0;
+}
+
+.btn-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: color var(--transition-fast);
+}
+
+.btn-back-link:hover {
+  color: var(--text-accent);
+}

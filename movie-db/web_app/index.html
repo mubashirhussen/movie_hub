@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Movie Database (1980–Present)</title>
+<style>
+  :root{--bg:#0f1115;--card:#1a1d24;--text:#eee;--sub:#9aa0aa;--accent:#e8b84b;}
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:system-ui,Arial,sans-serif;background:var(--bg);color:var(--text);}
+  header{padding:20px 24px;position:sticky;top:0;background:var(--bg);z-index:5;border-bottom:1px solid #22262f;}
+  header h1{margin:0 0 10px;font-size:20px;}
+  #search{width:100%;max-width:420px;padding:10px 12px;border-radius:8px;border:1px solid #333;background:#15171c;color:var(--text);font-size:14px;}
+  #count{color:var(--sub);font-size:13px;margin-left:10px;}
+  #grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:16px;padding:20px 24px;}
+  .card{background:var(--card);border-radius:10px;overflow:hidden;cursor:pointer;transition:transform .15s;}
+  .card:hover{transform:translateY(-4px);}
+  .card img{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;background:#222;}
+  .card .meta{padding:8px 10px;}
+  .card .t{font-size:13px;font-weight:600;line-height:1.25;}
+  .card .y{font-size:12px;color:var(--sub);}
+  #modal{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto;z-index:10;}
+  #modal.open{display:flex;}
+  .sheet{background:var(--card);border-radius:12px;max-width:780px;width:100%;display:flex;gap:20px;padding:20px;flex-wrap:wrap;}
+  .sheet img{width:220px;border-radius:8px;}
+  .sheet .info{flex:1;min-width:260px;}
+  .sheet h2{margin:0 0 4px;}
+  .sheet .tag{color:var(--sub);font-size:13px;margin-bottom:10px;}
+  .sheet p{font-size:14px;line-height:1.5;}
+  .castlist{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+  .castchip{background:#262a33;border-radius:14px;padding:4px 10px;font-size:12px;}
+  #close{float:right;cursor:pointer;color:var(--sub);font-size:20px;}
+  .empty{padding:40px;color:var(--sub);text-align:center;}
+</style>
+</head>
+<body>
+<header>
+  <h1>🎬 Movie Database — 1980 to Present</h1>
+  <input id="search" placeholder="Search by title, actor, or director...">
+  <span id="count"></span>
+</header>
+<div id="grid"></div>
+<div id="modal"><div class="sheet" id="sheetBody"></div></div>
+
+<script>
+let MOVIES = [];
+
+async function load() {
+  try {
+    const res = await fetch('../movies.json');
+    MOVIES = await res.json();
+  } catch (e) {
+    document.getElementById('grid').innerHTML =
+      '<div class="empty">Could not load movies.json. Run fetch_movies.py first, ' +
+      'then serve this folder with a local server (e.g. <code>python -m http.server</code>) ' +
+      'from the project root so the browser can read movies.json and posters/.</div>';
+    return;
+  }
+  render(MOVIES);
+}
+
+function posterSrc(m) {
+  if (m.poster_file) return '../' + m.poster_file;
+  if (m.poster_url) return m.poster_url;
+  return '';
+}
+
+function render(list) {
+  const grid = document.getElementById('grid');
+  document.getElementById('count').textContent = list.length + ' movies';
+  if (!list.length) { grid.innerHTML = '<div class="empty">No matches.</div>'; return; }
+  grid.innerHTML = list.map((m, i) => `
+    <div class="card" data-i="${MOVIES.indexOf(m)}">
+      ${posterSrc(m) ? `<img loading="lazy" src="${posterSrc(m)}" alt="${m.title} poster">`
+                      : `<div style="aspect-ratio:2/3;background:#222;"></div>`}
+      <div class="meta">
+        <div class="t">${m.title}</div>
+        <div class="y">${m.year || ''}</div>
+      </div>
+    </div>
+  `).join('');
+  grid.querySelectorAll('.card').forEach(el =>
+    el.addEventListener('click', () => openModal(MOVIES[+el.dataset.i]))
+  );
+}
+
+function openModal(m) {
+  const castHtml = (m.cast || []).map(c =>
+    `<span class="castchip">${c.actor}${c.character ? ' — ' + c.character : ''}</span>`
+  ).join('');
+  document.getElementById('sheetBody').innerHTML = `
+    <span id="close">✕</span>
+    ${posterSrc(m) ? `<img src="${posterSrc(m)}" alt="${m.title} poster">` : ''}
+    <div class="info">
+      <h2>${m.title} ${m.year ? '(' + m.year + ')' : ''}</h2>
+      <div class="tag">${m.genres || ''} ${m.runtime_minutes ? '· ' + m.runtime_minutes + ' min' : ''} ${m.director ? '· Dir. ' + m.director : ''}</div>
+      <p>${m.overview || ''}</p>
+      <div class="castlist">${castHtml}</div>
+    </div>
+  `;
+  document.getElementById('modal').classList.add('open');
+  document.getElementById('close').onclick = () =>
+    document.getElementById('modal').classList.remove('open');
+}
+document.getElementById('modal').addEventListener('click', (e) => {
+  if (e.target.id === 'modal') e.target.classList.remove('open');
+});
+
+document.getElementById('search').addEventListener('input', (e) => {
+  const q = e.target.value.toLowerCase().trim();
+  if (!q) { render(MOVIES); return; }
+  render(MOVIES.filter(m =>
+    (m.title || '').toLowerCase().includes(q) ||
+    (m.director || '').toLowerCase().includes(q) ||
+    (m.cast || []).some(c => c.actor.toLowerCase().includes(q))
+  ));
+});
+
+load();
+</script>
+</body>
+</html>
