@@ -1,13 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Star, Bookmark, Heart, Play, Eye } from 'lucide-react';
-import { getImageUrl } from '../../utils/imageUrl';
+import { Star, Bookmark, Heart, Play, Eye, Film } from 'lucide-react';
+import { getImageUrl, getPlaceholderPosterSvg } from '../../utils/imageUrl';
 import { formatRating, formatYear } from '../../utils/formatCurrency';
 import { useMovies } from '../../hooks/useMovies';
 import './index.css';
 
 const MovieCard = ({ movie }) => {
   const { isMovieInWatchlist, isMovieInFavorites, toggleWatchlist, toggleFavorite } = useMovies();
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
 
   if (!movie) return null;
 
@@ -15,18 +17,14 @@ const MovieCard = ({ movie }) => {
   const inWatchlist = isMovieInWatchlist(movieId);
   const inFavorites = isMovieInFavorites(movieId);
 
-  const posterUrl = getImageUrl(movie.poster_path || movie.posterPath);
-  const trailerKey = movie.trailer_key || movie.youtube_full_movie_key;
+  const initialPoster = getImageUrl(movie.poster_path || movie.posterPath, movie.title);
   const rating = formatRating(movie.vote_average);
   const releaseYear = formatYear(movie.release_date || movie.release_year);
 
   const handleImageError = (e) => {
-    e.target.onerror = null;
-    if (trailerKey) {
-      e.target.src = `https://img.youtube.com/vi/${trailerKey}/hqdefault.jpg`;
-    } else {
-      e.target.src = 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&auto=format&fit=crop&q=80';
-    }
+    e.currentTarget.onerror = null;
+    setHasError(true);
+    e.currentTarget.src = getPlaceholderPosterSvg(movie.title || 'Movie');
   };
 
   const handleWatchlistClick = (e) => {
@@ -44,11 +42,19 @@ const MovieCard = ({ movie }) => {
   return (
     <div className="cineverse-movie-card">
       <Link to={`/movie/${movieId}`} className="card-media-wrapper">
+        {/* Shimmer Placeholder while image is loading */}
+        {!imageLoaded && !hasError && (
+          <div className="card-poster-shimmer">
+            <Film size={28} className="shimmer-film-icon" />
+          </div>
+        )}
+
         <img
-          src={posterUrl}
+          src={initialPoster}
           alt={movie.title || 'Movie Poster'}
-          className="card-poster-img"
+          className={`card-poster-img ${imageLoaded || hasError ? 'loaded' : 'loading'}`}
           loading="lazy"
+          onLoad={() => setImageLoaded(true)}
           onError={handleImageError}
         />
 

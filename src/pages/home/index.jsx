@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Flame, Star, Calendar, ChevronRight, Compass, Sparkles } from 'lucide-react';
+import { Flame, Star, Calendar, ChevronRight, Compass } from 'lucide-react';
 import HeroSection from '../../components/heroSection';
 import MovieGrid from '../../components/movieGrid';
-import Loading from '../../components/loading';
-import ErrorMessage from '../../components/errorMessage';
 import movieService from '../../services/movieService';
 import './index.css';
 
@@ -18,68 +16,98 @@ const industries = [
 ];
 
 const Home = () => {
+  // Independent state per section for maximum resilience
   const [popularMovies, setPopularMovies] = useState([]);
+  const [popularLoading, setPopularLoading] = useState(true);
+  const [popularError, setPopularError] = useState(null);
+
   const [topRatedMovies, setTopRatedMovies] = useState([]);
+  const [topRatedLoading, setTopRatedLoading] = useState(true);
+  const [topRatedError, setTopRatedError] = useState(null);
+
   const [upcomingMovies, setUpcomingMovies] = useState([]);
+  const [upcomingLoading, setUpcomingLoading] = useState(true);
+  const [upcomingError, setUpcomingError] = useState(null);
+
   const [selectedIndustry, setSelectedIndustry] = useState('tollywood');
   const [industryMovies, setIndustryMovies] = useState([]);
-  const [industryLoading, setIndustryLoading] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [industryLoading, setIndustryLoading] = useState(true);
+  const [industryError, setIndustryError] = useState(null);
 
-  const fetchHomeContent = async () => {
-    setLoading(true);
-    setError(null);
+  const fetchPopular = async () => {
+    setPopularLoading(true);
+    setPopularError(null);
     try {
-      const [popData, topData, upData, indData] = await Promise.all([
-        movieService.getPopularMovies(1),
-        movieService.getTopRatedMovies(1),
-        movieService.getUpcomingMovies(1),
-        movieService.getMoviesByIndustry('tollywood', 1),
-      ]);
-
-      setPopularMovies(popData.results || []);
-      setTopRatedMovies(topData.results || []);
-      setUpcomingMovies(upData.results || []);
-      setIndustryMovies(indData.results || []);
+      const data = await movieService.getPopularMovies(1);
+      setPopularMovies(data.results || []);
     } catch (err) {
-      setError(err.message || 'Unable to load movie discovery streams.');
+      setPopularError(err.message || 'Unable to load popular movies.');
     } finally {
-      setLoading(false);
+      setPopularLoading(false);
     }
   };
 
-  const handleIndustrySelect = async (industryId) => {
-    if (industryId === selectedIndustry) return;
-    setSelectedIndustry(industryId);
+  const fetchTopRated = async () => {
+    setTopRatedLoading(true);
+    setTopRatedError(null);
+    try {
+      const data = await movieService.getTopRatedMovies(1);
+      setTopRatedMovies(data.results || []);
+    } catch (err) {
+      setTopRatedError(err.message || 'Unable to load top rated movies.');
+    } finally {
+      setTopRatedLoading(false);
+    }
+  };
+
+  const fetchUpcoming = async () => {
+    setUpcomingLoading(true);
+    setUpcomingError(null);
+    try {
+      const data = await movieService.getUpcomingMovies(1);
+      setUpcomingMovies(data.results || []);
+    } catch (err) {
+      setUpcomingError(err.message || 'Unable to load upcoming releases.');
+    } finally {
+      setUpcomingLoading(false);
+    }
+  };
+
+  const fetchIndustry = async (industryId) => {
     setIndustryLoading(true);
+    setIndustryError(null);
     try {
       const data = await movieService.getMoviesByIndustry(industryId, 1);
       setIndustryMovies(data.results || []);
     } catch (err) {
-      console.warn('Failed to load industry movies:', err);
+      setIndustryError(err.message || `Unable to load ${industryId} cinema.`);
     } finally {
       setIndustryLoading(false);
     }
   };
 
+  const fetchAllHomeContent = () => {
+    fetchPopular();
+    fetchTopRated();
+    fetchUpcoming();
+    fetchIndustry(selectedIndustry);
+  };
+
   useEffect(() => {
-    fetchHomeContent();
+    fetchAllHomeContent();
   }, []);
 
-  if (loading) {
-    return <Loading message="Curating CineVerse trending movies & streaming information..." />;
-  }
+  const handleIndustrySelect = (industryId) => {
+    if (industryId === selectedIndustry) return;
+    setSelectedIndustry(industryId);
+    fetchIndustry(industryId);
+  };
 
-  if (error) {
-    return <ErrorMessage message={error} onRetry={fetchHomeContent} />;
-  }
-
-  const featuredMovie = popularMovies[0] || topRatedMovies[0];
+  const featuredMovie = popularMovies[0] || topRatedMovies[0] || upcomingMovies[0];
 
   return (
     <div className="cineverse-home-page">
-      {/* 1. Dynamic Hero Section */}
+      {/* 1. Dynamic Hero Spotlight */}
       {featuredMovie && <HeroSection movie={featuredMovie} />}
 
       <main className="container home-content-layout">
@@ -93,13 +121,13 @@ const Home = () => {
               <div>
                 <h2 className="section-heading">Explore by Cinema Industry</h2>
                 <p className="section-subheading">
-                  Tollywood, Bollywood, Hollywood, Kollywood, Sandalwood & Mollywood
+                  Tollywood, Bollywood, Hollywood, Kollywood, Sandalwood &amp; Mollywood
                 </p>
               </div>
             </div>
 
             <Link to={`/category/${selectedIndustry}`} className="btn-view-all-section">
-              <span>View Full {industries.find(i => i.id === selectedIndustry)?.name}</span>
+              <span>View Full {industries.find((i) => i.id === selectedIndustry)?.name}</span>
               <ChevronRight size={16} />
             </Link>
           </div>
@@ -115,6 +143,7 @@ const Home = () => {
                   className={`home-industry-pill ${isSelected ? 'active' : ''}`}
                   onClick={() => handleIndustrySelect(ind.id)}
                   style={{ '--active-color': ind.color }}
+                  aria-pressed={isSelected}
                 >
                   <span className="pill-emoji">{ind.icon}</span>
                   <div className="pill-text-wrap">
@@ -126,16 +155,17 @@ const Home = () => {
             })}
           </div>
 
-          {industryLoading ? (
-            <div className="industry-loading-shimmer">
-              <p>Loading cinema collection...</p>
-            </div>
-          ) : (
-            <MovieGrid movies={industryMovies.slice(0, 10)} />
-          )}
+          <MovieGrid
+            movies={industryMovies.slice(0, 10)}
+            loading={industryLoading}
+            error={industryError}
+            onRetry={() => fetchIndustry(selectedIndustry)}
+            emptyMessage={`No movies found for ${industries.find((i) => i.id === selectedIndustry)?.name || 'this industry'}.`}
+            skeletonCount={5}
+          />
         </section>
 
-        {/* 3. Popular Section */}
+        {/* 3. Popular Movies Section */}
         <section className="home-movie-section">
           <div className="section-header-row">
             <div className="section-title-group">
@@ -154,10 +184,17 @@ const Home = () => {
             </Link>
           </div>
 
-          <MovieGrid movies={popularMovies.slice(0, 10)} />
+          <MovieGrid
+            movies={popularMovies.slice(0, 10)}
+            loading={popularLoading}
+            error={popularError}
+            onRetry={fetchPopular}
+            emptyMessage="No popular movies found right now."
+            skeletonCount={5}
+          />
         </section>
 
-        {/* 4. Top Rated Section */}
+        {/* 4. Top Rated Masterpieces Section */}
         <section className="home-movie-section">
           <div className="section-header-row">
             <div className="section-title-group">
@@ -176,10 +213,17 @@ const Home = () => {
             </Link>
           </div>
 
-          <MovieGrid movies={topRatedMovies.slice(0, 10)} />
+          <MovieGrid
+            movies={topRatedMovies.slice(0, 10)}
+            loading={topRatedLoading}
+            error={topRatedError}
+            onRetry={fetchTopRated}
+            emptyMessage="No top-rated movies found."
+            skeletonCount={5}
+          />
         </section>
 
-        {/* 5. Upcoming Section */}
+        {/* 5. Upcoming Releases Section */}
         <section className="home-movie-section">
           <div className="section-header-row">
             <div className="section-title-group">
@@ -198,7 +242,14 @@ const Home = () => {
             </Link>
           </div>
 
-          <MovieGrid movies={upcomingMovies.slice(0, 10)} />
+          <MovieGrid
+            movies={upcomingMovies.slice(0, 10)}
+            loading={upcomingLoading}
+            error={upcomingError}
+            onRetry={fetchUpcoming}
+            emptyMessage="No upcoming releases found."
+            skeletonCount={5}
+          />
         </section>
       </main>
     </div>

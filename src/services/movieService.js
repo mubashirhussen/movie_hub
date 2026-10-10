@@ -33,27 +33,34 @@ export const searchMovies = async (query, page = 1) => {
 
 export const getMovieDetails = async (movieId) => {
   const response = await api.get(`/movies/${movieId}`);
-  return response.data?.data || response.data;
+  const payload = response.data?.data ?? response.data;
+  if (!payload || typeof payload !== 'object') {
+    throw new Error(`Invalid movie details payload for movie #${movieId}`);
+  }
+  return payload;
 };
 
 export const getMovieCast = async (movieId) => {
   const response = await api.get(`/movies/${movieId}/cast`);
-  return response.data?.data || response.data;
+  const payload = response.data?.data ?? response.data;
+  return payload?.cast ? payload : { cast: Array.isArray(payload) ? payload : [] };
 };
 
 export const getMovieTrailer = async (movieId) => {
   const response = await api.get(`/movies/${movieId}/trailer`);
-  return response.data?.data || response.data;
+  const payload = response.data?.data ?? response.data;
+  return payload;
 };
 
 export const getMovieProviders = async (movieId) => {
   const response = await api.get(`/movies/${movieId}/providers`);
-  return response.data?.data || response.data;
+  const payload = response.data?.data ?? response.data;
+  return payload;
 };
 
 export const getSimilarMovies = async (movieId, page = 1) => {
   const response = await api.get(`/movies/${movieId}/similar`, { params: { page } });
-  return response.data?.data || response.data;
+  return unwrapMovieResponse(response, `/movies/${movieId}/similar`);
 };
 
 export const getMoviesByIndustry = async (industry, page = 1) => {
@@ -64,7 +71,7 @@ export const getMoviesByIndustry = async (industry, page = 1) => {
 export const trackMovieView = async (movieId) => {
   try {
     const response = await api.post(`/movies/${movieId}/view`);
-    return response.data;
+    return response.data?.data ?? response.data;
   } catch {
     return null;
   }
