@@ -9,6 +9,7 @@ import peopleRoutes from './routes/peopleRoutes.js';
 import watchlistRoutes from './routes/watchlistRoutes.js';
 import favoriteRoutes from './routes/favoriteRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import historyRoutes from './routes/historyRoutes.js';
 import { errorHandler } from './middleware/errorMiddleware.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -37,12 +38,7 @@ app.use('/api/people', peopleRoutes);
 app.use('/api/watchlist', watchlistRoutes);
 app.use('/api/favorites', favoriteRoutes);
 app.use('/api/users', userRoutes);
-
-// Direct history convenience routes mapped to userRoutes
-app.use('/api/history', (req, res, next) => {
-  req.url = `/history${req.url === '/' ? '' : req.url}`;
-  return userRoutes(req, res, next);
-});
+app.use('/api/history', historyRoutes);
 
 // Serve Client Static Build in production
 const distPath = path.resolve(__dirname, '../dist');

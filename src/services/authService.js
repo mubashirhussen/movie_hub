@@ -5,8 +5,8 @@ export const login = async (email, password) => {
   return response.data;
 };
 
-export const register = async (name, email, password) => {
-  const response = await api.post('/auth/register', { name, email, password });
+export const register = async (name, email, password, confirmPassword) => {
+  const response = await api.post('/auth/register', { name, email, password, confirmPassword });
   return response.data;
 };
 
@@ -26,17 +26,22 @@ export const updateProfile = async (userData) => {
 };
 
 export const getHistory = async () => {
-  const response = await api.get('/users/history');
+  const response = await api.get('/history');
   return response.data;
 };
 
 export const addToHistory = async (movieId, movieTitle, posterPath) => {
-  const response = await api.post(`/users/history/${movieId}`, { movieTitle, posterPath });
+  const response = await api.post(`/history/${movieId}`, { movieTitle, posterPath });
   return response.data;
 };
 
 export const removeFromHistory = async (movieId) => {
-  const response = await api.delete(`/users/history/${movieId}`);
+  const response = await api.delete(`/history/${movieId}`);
+  return response.data;
+};
+
+export const clearHistory = async () => {
+  const response = await api.delete('/history');
   return response.data;
 };
 
@@ -49,4 +54,5 @@ export default {
   getHistory,
   addToHistory,
   removeFromHistory,
+  clearHistory,
 };

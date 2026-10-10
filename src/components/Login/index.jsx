@@ -15,7 +15,7 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const from = location.state?.from?.pathname || '/';
+  const from = location.state?.from?.pathname || '/dashboard';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -35,11 +35,6 @@ const Login = () => {
     } else {
       setErrorMessage(result.message || 'Invalid email or password.');
     }
-  };
-
-  const fillDemoAccount = () => {
-    setEmail('moviegeek@example.com');
-    setPassword('cinewave123');
   };
 
   return (
@@ -98,15 +93,9 @@ const Login = () => {
               <span>Remember me</span>
             </label>
 
-            <button
-              type="button"
-              className="auth-demo-btn"
-              onClick={fillDemoAccount}
-              title="Autofill demo account credentials"
-            >
-              <Sparkles size={12} />
-              <span>Use Demo Account</span>
-            </button>
+            <Link to="/register" className="auth-forgot-link">
+              Need an account? Register
+            </Link>
           </div>
 
           {/* Submit */}

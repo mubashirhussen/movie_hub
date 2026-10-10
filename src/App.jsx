@@ -17,6 +17,7 @@ import HistoryPage from './pages/history';
 import LoginPage from './pages/login';
 import RegisterPage from './pages/register';
 import ProfilePage from './pages/profile';
+import Dashboard from './pages/dashboard';
 import NotFound from './pages/notFound';
 
 function App() {
@@ -40,6 +41,14 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
 
           {/* Protected Routes */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/profile"
             element={

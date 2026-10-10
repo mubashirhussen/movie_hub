@@ -4,14 +4,15 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const getJwtSecret = () => {
-  if (!process.env.JWT_SECRET) {
+export const getJwtSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
     if (process.env.NODE_ENV === 'production') {
-      throw new Error('FATAL: JWT_SECRET environment variable is missing in production');
+      throw new Error('FATAL: JWT_SECRET environment variable is missing');
     }
-    return 'dev_only_jwt_secret_please_set_in_env';
+    return 'cineverse_development_secret_key_2026';
   }
-  return process.env.JWT_SECRET;
+  return secret;
 };
 
 export const protect = async (req, res, next) => {
@@ -34,21 +35,18 @@ export const protect = async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, getJwtSecret());
 
-    // Try finding user in MongoDB if connected
-    try {
-      const user = await User.findById(decoded.id).select('-password');
-      if (user) {
-        req.user = user;
-        return next();
-      }
-    } catch {
-      // If DB error, attach basic decoded payload
+    // Validate that the user exists in MongoDB
+    const user = await User.findById(decoded.id).select('-password');
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Not authorized, user not found or session invalid',
+      });
     }
 
-    req.user = { _id: decoded.id, id: decoded.id, role: decoded.role || 'user' };
+    req.user = user;
     next();
   } catch (error) {
-    console.error('JWT Verification Error:', error.message);
     return res.status(401).json({
       success: false,
       message: 'Not authorized, token failed or expired',

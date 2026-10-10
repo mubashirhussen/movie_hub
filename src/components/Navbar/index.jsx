@@ -14,7 +14,8 @@ import {
   Compass,
   Home,
   Play,
-  SlidersHorizontal
+  SlidersHorizontal,
+  LayoutDashboard
 } from 'lucide-react';
 import Logo from '../logo';
 import SearchBar from '../searchBar';
@@ -216,6 +217,11 @@ const Navbar = () => {
 
                     <div className="dropdown-divider" />
 
+                    <Link to="/dashboard" className="dropdown-menu-item">
+                      <LayoutDashboard size={15} />
+                      <span>Dashboard</span>
+                    </Link>
+
                     <Link to="/profile" className="dropdown-menu-item">
                       <User size={15} />
                       <span>My Profile</span>
@@ -342,6 +348,10 @@ const Navbar = () => {
 
               {isAuthenticated() ? (
                 <>
+                  <NavLink to="/dashboard" className="mobile-nav-item">
+                    <LayoutDashboard size={18} />
+                    <span>Dashboard</span>
+                  </NavLink>
                   <NavLink to="/profile" className="mobile-nav-item">
                     <User size={18} />
                     <span>My Profile</span>

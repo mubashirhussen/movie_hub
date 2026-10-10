@@ -45,9 +45,9 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (name, email, password) => {
+  const register = async (name, email, password, confirmPassword) => {
     try {
-      const res = await authService.register(name, email, password);
+      const res = await authService.register(name, email, password, confirmPassword);
       if (res?.data?.token) {
         localStorage.setItem('cineverse_token', res.data.token);
         setToken(res.data.token);
@@ -57,6 +57,19 @@ export const AuthProvider = ({ children }) => {
       return { success: false, message: 'Registration response invalid' };
     } catch (err) {
       return { success: false, message: err.message || 'Registration failed' };
+    }
+  };
+
+  const updateUserProfile = async (userData) => {
+    try {
+      const res = await authService.updateProfile(userData);
+      if (res?.data) {
+        setCurrentUser((prev) => ({ ...prev, ...res.data }));
+        return { success: true, message: res.message || 'Profile updated successfully' };
+      }
+      return { success: false, message: 'Failed to update profile' };
+    } catch (err) {
+      return { success: false, message: err.message || 'Profile update failed' };
     }
   };
 
@@ -79,6 +92,7 @@ export const AuthProvider = ({ children }) => {
         logout,
         isAuthenticated,
         setCurrentUser,
+        updateUserProfile,
       }}
     >
       {children}

@@ -35,11 +35,11 @@ const Register = () => {
     }
 
     setIsSubmitting(true);
-    const result = await register(name.trim(), email.trim(), password);
+    const result = await register(name.trim(), email.trim(), password, confirmPassword);
     setIsSubmitting(false);
 
     if (result.success) {
-      navigate('/', { replace: true });
+      navigate('/dashboard', { replace: true });
     } else {
       setErrorMessage(result.message || 'Registration failed. Please try again.');
     }
