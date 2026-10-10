@@ -52,6 +52,13 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-poster {
+    animation: none;
+    background: #181e30;
+  }
+}
+
 /* Error State */
 .grid-error-state {
   text-align: center;

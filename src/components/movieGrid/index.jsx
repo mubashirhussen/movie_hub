@@ -77,8 +77,12 @@ const MovieGrid = ({
   // 4. Data State
   return (
     <div className="cineverse-movie-grid animate-fade-in">
-      {movies.map((movie) => (
-        <MovieCard key={movie.id || movie.movieId} movie={movie} />
+      {movies.map((movie, idx) => (
+        <MovieCard
+          key={movie.id || movie.movieId}
+          movie={movie}
+          priority={idx < 4}
+        />
       ))}
     </div>
   );

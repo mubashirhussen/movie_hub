@@ -1,4 +1,5 @@
 export const TMDB_IMAGE_BASE_W500 = 'https://image.tmdb.org/t/p/w500';
+export const TMDB_IMAGE_BASE_BACKDROP = 'https://image.tmdb.org/t/p/w1280';
 export const TMDB_IMAGE_BASE_ORIGINAL = 'https://image.tmdb.org/t/p/original';
 export const TMDB_PROFILE_BASE = 'https://image.tmdb.org/t/p/w185';
 
@@ -8,8 +9,13 @@ export const TMDB_PROFILE_BASE = 'https://image.tmdb.org/t/p/w185';
  */
 export const getPlaceholderPosterSvg = (title = 'Movie') => {
   const safeTitle = String(title || 'Movie')
-    .replace(/[<>&"']/g, '')
-    .slice(0, 24);
+    .slice(0, 40)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
+
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 750" width="500" height="750">
     <defs>
       <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -54,9 +60,23 @@ export const getImageUrl = (path, titleOrFallback = FALLBACK_POSTER) => {
     return fallback;
   }
 
-  // Already an absolute HTTP/HTTPS URL
+  // Reject malformed protocols like invalid://, javascript:, ftp:, etc.
+  if (trimmed.includes('://') && !trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+    return fallback;
+  }
+
+  // Already an absolute or protocol-relative URL
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
     return trimmed;
+  }
+  if (trimmed.startsWith('//')) {
+    return `https:${trimmed}`;
+  }
+  if (trimmed.includes('image.tmdb.org')) {
+    return trimmed.startsWith('http') ? trimmed : `https://${trimmed.replace(/^\/+/, '')}`;
+  }
+  if (trimmed.startsWith('w500/') || trimmed.startsWith('/w500/')) {
+    return `https://image.tmdb.org/t/p/${trimmed.replace(/^\/+/, '')}`;
   }
 
   // Standard TMDB image hash path
@@ -80,12 +100,28 @@ export const getBackdropUrl = (path, fallback = FALLBACK_BACKDROP) => {
     return fallback;
   }
 
+  if (trimmed.includes('://') && !trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+    return fallback;
+  }
+
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
     return trimmed;
   }
+  if (trimmed.startsWith('//')) {
+    return `https:${trimmed}`;
+  }
+  if (trimmed.includes('image.tmdb.org')) {
+    return trimmed.startsWith('http') ? trimmed : `https://${trimmed.replace(/^\/+/, '')}`;
+  }
+  if (trimmed.startsWith('w1280/') || trimmed.startsWith('/w1280/')) {
+    return `https://image.tmdb.org/t/p/${trimmed.replace(/^\/+/, '')}`;
+  }
+  if (trimmed.startsWith('original/') || trimmed.startsWith('/original/')) {
+    return `https://image.tmdb.org/t/p/${trimmed.replace(/^\/+/, '')}`;
+  }
 
   const normalizedPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
-  return `${TMDB_IMAGE_BASE_ORIGINAL}${normalizedPath}`;
+  return `${TMDB_IMAGE_BASE_BACKDROP}${normalizedPath}`;
 };
 
 /**
@@ -106,6 +142,15 @@ export const getProfileUrl = (path, fallback = FALLBACK_PROFILE) => {
 
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
     return trimmed;
+  }
+  if (trimmed.startsWith('//')) {
+    return `https:${trimmed}`;
+  }
+  if (trimmed.includes('image.tmdb.org')) {
+    return trimmed.startsWith('http') ? trimmed : `https://${trimmed.replace(/^\/+/, '')}`;
+  }
+  if (trimmed.startsWith('w185/') || trimmed.startsWith('/w185/')) {
+    return `https://image.tmdb.org/t/p/${trimmed.replace(/^\/+/, '')}`;
   }
 
   const normalizedPath = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;

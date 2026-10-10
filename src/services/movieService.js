@@ -11,28 +11,28 @@ const unwrapMovieResponse = (response, endpoint) => {
   return payload;
 };
 
-export const getPopularMovies = async (page = 1) => {
-  const response = await api.get('/movies/popular', { params: { page } });
+export const getPopularMovies = async (page = 1, options = {}) => {
+  const response = await api.get('/movies/popular', { params: { page }, ...options });
   return unwrapMovieResponse(response, '/movies/popular');
 };
 
-export const getTopRatedMovies = async (page = 1) => {
-  const response = await api.get('/movies/top-rated', { params: { page } });
+export const getTopRatedMovies = async (page = 1, options = {}) => {
+  const response = await api.get('/movies/top-rated', { params: { page }, ...options });
   return unwrapMovieResponse(response, '/movies/top-rated');
 };
 
-export const getUpcomingMovies = async (page = 1) => {
-  const response = await api.get('/movies/upcoming', { params: { page } });
+export const getUpcomingMovies = async (page = 1, options = {}) => {
+  const response = await api.get('/movies/upcoming', { params: { page }, ...options });
   return unwrapMovieResponse(response, '/movies/upcoming');
 };
 
-export const searchMovies = async (query, page = 1) => {
-  const response = await api.get('/movies/search', { params: { query, page } });
+export const searchMovies = async (query, page = 1, options = {}) => {
+  const response = await api.get('/movies/search', { params: { query, page }, ...options });
   return unwrapMovieResponse(response, '/movies/search');
 };
 
-export const getMovieDetails = async (movieId) => {
-  const response = await api.get(`/movies/${movieId}`);
+export const getMovieDetails = async (movieId, options = {}) => {
+  const response = await api.get(`/movies/${movieId}`, options);
   const payload = response.data?.data ?? response.data;
   if (!payload || typeof payload !== 'object') {
     throw new Error(`Invalid movie details payload for movie #${movieId}`);
@@ -40,37 +40,40 @@ export const getMovieDetails = async (movieId) => {
   return payload;
 };
 
-export const getMovieCast = async (movieId) => {
-  const response = await api.get(`/movies/${movieId}/cast`);
+export const getMovieCast = async (movieId, options = {}) => {
+  const response = await api.get(`/movies/${movieId}/cast`, options);
   const payload = response.data?.data ?? response.data;
   return payload?.cast ? payload : { cast: Array.isArray(payload) ? payload : [] };
 };
 
-export const getMovieTrailer = async (movieId) => {
-  const response = await api.get(`/movies/${movieId}/trailer`);
+export const getMovieTrailer = async (movieId, options = {}) => {
+  const response = await api.get(`/movies/${movieId}/trailer`, options);
   const payload = response.data?.data ?? response.data;
   return payload;
 };
 
-export const getMovieProviders = async (movieId) => {
-  const response = await api.get(`/movies/${movieId}/providers`);
+export const getMovieProviders = async (movieId, options = {}) => {
+  const response = await api.get(`/movies/${movieId}/providers`, options);
   const payload = response.data?.data ?? response.data;
   return payload;
 };
 
-export const getSimilarMovies = async (movieId, page = 1) => {
-  const response = await api.get(`/movies/${movieId}/similar`, { params: { page } });
+export const getSimilarMovies = async (movieId, page = 1, options = {}) => {
+  const response = await api.get(`/movies/${movieId}/similar`, { params: { page }, ...options });
   return unwrapMovieResponse(response, `/movies/${movieId}/similar`);
 };
 
-export const getMoviesByIndustry = async (industry, page = 1) => {
-  const response = await api.get(`/movies/category/${encodeURIComponent(industry)}`, { params: { page } });
+export const getMoviesByIndustry = async (industry, page = 1, options = {}) => {
+  const response = await api.get(`/movies/category/${encodeURIComponent(industry)}`, {
+    params: { page },
+    ...options,
+  });
   return unwrapMovieResponse(response, '/movies/category');
 };
 
-export const trackMovieView = async (movieId) => {
+export const trackMovieView = async (movieId, options = {}) => {
   try {
-    const response = await api.post(`/movies/${movieId}/view`);
+    const response = await api.post(`/movies/${movieId}/view`, {}, options);
     return response.data?.data ?? response.data;
   } catch {
     return null;

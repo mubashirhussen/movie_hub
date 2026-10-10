@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Flame, Star, Calendar, ChevronRight, Compass } from 'lucide-react';
 import HeroSection from '../../components/heroSection';
@@ -33,6 +33,10 @@ const Home = () => {
   const [industryMovies, setIndustryMovies] = useState([]);
   const [industryLoading, setIndustryLoading] = useState(true);
   const [industryError, setIndustryError] = useState(null);
+
+  // References to manage race conditions and cancel obsolete industry requests
+  const industryControllerRef = useRef(null);
+  const industrySeqRef = useRef(0);
 
   const fetchPopular = async () => {
     setPopularLoading(true);
@@ -74,27 +78,51 @@ const Home = () => {
   };
 
   const fetchIndustry = async (industryId) => {
+    // 1. Cancel in-flight industry request if any
+    if (industryControllerRef.current) {
+      industryControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    industryControllerRef.current = controller;
+    const currentSeq = ++industrySeqRef.current;
+
     setIndustryLoading(true);
     setIndustryError(null);
     try {
-      const data = await movieService.getMoviesByIndustry(industryId, 1);
-      setIndustryMovies(data.results || []);
+      const data = await movieService.getMoviesByIndustry(industryId, 1, {
+        signal: controller.signal,
+      });
+      // 2. Only commit state if this is the newest requested industry
+      if (currentSeq === industrySeqRef.current) {
+        setIndustryMovies(data.results || []);
+      }
     } catch (err) {
-      setIndustryError(err.message || `Unable to load ${industryId} cinema.`);
+      // Ignore deliberate abort/cancel errors
+      if (err.name === 'CanceledError' || err.name === 'AbortError' || err.code === 'ERR_CANCELED') {
+        return;
+      }
+      if (currentSeq === industrySeqRef.current) {
+        setIndustryError(err.message || `Unable to load ${industryId} cinema.`);
+      }
     } finally {
-      setIndustryLoading(false);
+      if (currentSeq === industrySeqRef.current) {
+        setIndustryLoading(false);
+      }
     }
   };
 
-  const fetchAllHomeContent = () => {
+  useEffect(() => {
+    // Concurrently load all 4 sections on mount
     fetchPopular();
     fetchTopRated();
     fetchUpcoming();
-    fetchIndustry(selectedIndustry);
-  };
+    fetchIndustry('tollywood');
 
-  useEffect(() => {
-    fetchAllHomeContent();
+    return () => {
+      if (industryControllerRef.current) {
+        industryControllerRef.current.abort();
+      }
+    };
   }, []);
 
   const handleIndustrySelect = (industryId) => {

@@ -223,3 +223,15 @@
   font-weight: 700;
   color: #cbd5e1;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .cineverse-movie-card,
+  .card-poster-img,
+  .card-hover-overlay,
+  .hover-play-icon,
+  .hover-action-btn,
+  .card-poster-shimmer {
+    animation: none !important;
+    transition: none !important;
+  }
+}

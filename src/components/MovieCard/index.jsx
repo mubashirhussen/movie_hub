@@ -6,7 +6,7 @@ import { formatRating, formatYear } from '../../utils/formatCurrency';
 import { useMovies } from '../../hooks/useMovies';
 import './index.css';
 
-const MovieCard = ({ movie }) => {
+const MovieCard = ({ movie, priority = false }) => {
   const { isMovieInWatchlist, isMovieInFavorites, toggleWatchlist, toggleFavorite } = useMovies();
   const [imageLoaded, setImageLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
@@ -53,7 +53,9 @@ const MovieCard = ({ movie }) => {
           src={initialPoster}
           alt={movie.title || 'Movie Poster'}
           className={`card-poster-img ${imageLoaded || hasError ? 'loaded' : 'loading'}`}
-          loading="lazy"
+          loading={priority ? 'eager' : 'lazy'}
+          fetchPriority={priority ? 'high' : 'auto'}
+          decoding="async"
           onLoad={() => setImageLoaded(true)}
           onError={handleImageError}
         />
