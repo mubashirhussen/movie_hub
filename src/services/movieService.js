@@ -1,23 +1,34 @@
 import api from './api';
 
+const unwrapMovieResponse = (response, endpoint) => {
+  const payload = response.data?.data ?? response.data;
+  if (!payload || !Array.isArray(payload.results)) {
+    console.error(`Invalid movie API response from ${endpoint}:`, response.data);
+    throw new Error(
+      `Invalid movie data received from ${endpoint}. Check the backend response.`
+    );
+  }
+  return payload;
+};
+
 export const getPopularMovies = async (page = 1) => {
   const response = await api.get('/movies/popular', { params: { page } });
-  return response.data?.data || response.data;
+  return unwrapMovieResponse(response, '/movies/popular');
 };
 
 export const getTopRatedMovies = async (page = 1) => {
   const response = await api.get('/movies/top-rated', { params: { page } });
-  return response.data?.data || response.data;
+  return unwrapMovieResponse(response, '/movies/top-rated');
 };
 
 export const getUpcomingMovies = async (page = 1) => {
   const response = await api.get('/movies/upcoming', { params: { page } });
-  return response.data?.data || response.data;
+  return unwrapMovieResponse(response, '/movies/upcoming');
 };
 
 export const searchMovies = async (query, page = 1) => {
   const response = await api.get('/movies/search', { params: { query, page } });
-  return response.data?.data || response.data;
+  return unwrapMovieResponse(response, '/movies/search');
 };
 
 export const getMovieDetails = async (movieId) => {
@@ -47,7 +58,7 @@ export const getSimilarMovies = async (movieId, page = 1) => {
 
 export const getMoviesByIndustry = async (industry, page = 1) => {
   const response = await api.get(`/movies/category/${encodeURIComponent(industry)}`, { params: { page } });
-  return response.data?.data || response.data;
+  return unwrapMovieResponse(response, '/movies/category');
 };
 
 export const trackMovieView = async (movieId) => {
