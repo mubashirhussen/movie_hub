@@ -115,7 +115,7 @@ export const updateProfile = async (req, res, next) => {
 export const getHistory = async (req, res, next) => {
   try {
     const userId = req.user._id;
-    const history = await History.find({ userId }).sort({ viewedAt: -1 }).limit(50);
+    const history = await History.find({ userId }).sort({ viewedAt: -1 }).limit(50).lean();
 
     return res.status(200).json({
       success: true,

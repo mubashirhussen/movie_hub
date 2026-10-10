@@ -4,7 +4,7 @@ import Watchlist from '../models/Watchlist.js';
 export const getWatchlist = async (req, res, next) => {
   try {
     const userId = req.user._id;
-    const list = await Watchlist.find({ userId }).sort({ addedAt: -1 });
+    const list = await Watchlist.find({ userId }).sort({ addedAt: -1 }).lean();
 
     return res.status(200).json({
       success: true,

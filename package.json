@@ -12,11 +12,12 @@
     "build": "vite build",
     "preview": "vite preview",
     "start": "node server/server.js",
-    "test": "node test_phase2_verification.js && node test_phase3_verification.js && node test_phase4_verification.js && node test_phase5_verification.js",
+    "test": "node test_phase2_verification.js && node test_phase3_verification.js && node test_phase4_verification.js && node test_phase5_verification.js && node test_phase6_verification.js",
     "test:phase2": "node test_phase2_verification.js",
     "test:phase3": "node test_phase3_verification.js",
     "test:phase4": "node test_phase4_verification.js",
-    "test:phase5": "node test_phase5_verification.js"
+    "test:phase5": "node test_phase5_verification.js",
+    "test:phase6": "node test_phase6_verification.js"
   },
   "keywords": [
     "react",
@@ -49,7 +50,6 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^6.1.1",
     "concurrently": "^10.0.5",
-    "nodemon": "^3.1.14",
     "vite": "^8.3.2"
   }
 }

@@ -30,6 +30,7 @@ const historySchema = new mongoose.Schema(
 );
 
 historySchema.index({ userId: 1, movieId: 1 });
+historySchema.index({ userId: 1, viewedAt: -1 });
 
 const History = mongoose.model('History', historySchema);
 

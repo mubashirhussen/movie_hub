@@ -4,7 +4,7 @@ import Favorite from '../models/Favorite.js';
 export const getFavorites = async (req, res, next) => {
   try {
     const userId = req.user._id;
-    const list = await Favorite.find({ userId }).sort({ addedAt: -1 });
+    const list = await Favorite.find({ userId }).sort({ addedAt: -1 }).lean();
 
     return res.status(200).json({
       success: true,
