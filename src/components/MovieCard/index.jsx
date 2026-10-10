@@ -51,7 +51,7 @@ const MovieCard = ({ movie, priority = false }) => {
 
         <img
           src={initialPoster}
-          alt={movie.title || 'Movie Poster'}
+          alt={movie.title ? `${movie.title} poster` : 'Movie poster'}
           className={`card-poster-img ${imageLoaded || hasError ? 'loaded' : 'loading'}`}
           loading={priority ? 'eager' : 'lazy'}
           fetchPriority={priority ? 'high' : 'auto'}
@@ -80,7 +80,7 @@ const MovieCard = ({ movie, priority = false }) => {
               className={`hover-action-btn ${inWatchlist ? 'active-wl' : ''}`}
               onClick={handleWatchlistClick}
               title={inWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
-              aria-label="Toggle Watchlist"
+              aria-label={inWatchlist ? `Remove ${movie.title || 'movie'} from Watchlist` : `Add ${movie.title || 'movie'} to Watchlist`}
             >
               <Bookmark size={15} fill={inWatchlist ? 'currentColor' : 'none'} />
             </button>
@@ -90,7 +90,7 @@ const MovieCard = ({ movie, priority = false }) => {
               className={`hover-action-btn ${inFavorites ? 'active-fav' : ''}`}
               onClick={handleFavoriteClick}
               title={inFavorites ? 'Remove from Favorites' : 'Add to Favorites'}
-              aria-label="Toggle Favorite"
+              aria-label={inFavorites ? `Remove ${movie.title || 'movie'} from Favorites` : `Add ${movie.title || 'movie'} to Favorites`}
             >
               <Heart size={15} fill={inFavorites ? 'currentColor' : 'none'} />
             </button>
@@ -119,4 +119,4 @@ const MovieCard = ({ movie, priority = false }) => {
   );
 };
 
-export default MovieCard;
+export default React.memo(MovieCard);

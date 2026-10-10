@@ -8,7 +8,7 @@ import MovieView from '../models/MovieView.js';
 export const getProfile = async (req, res, next) => {
   try {
     const userId = req.user._id;
-    const user = await User.findById(userId).select('-password');
+    const user = await User.findById(userId).select('-password').lean();
 
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });

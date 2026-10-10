@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Bookmark, Film, Compass } from 'lucide-react';
 import { useMovies } from '../../hooks/useMovies';
@@ -9,12 +9,16 @@ import '../popular/index.css';
 const Watchlist = () => {
   const { watchlist, loadingLists } = useMovies();
 
-  // Convert watchlist items to MovieCard friendly format
-  const formattedMovies = watchlist.map((item) => ({
-    id: item.movieId,
-    title: item.movieTitle,
-    poster_path: item.posterPath,
-  }));
+  // Convert watchlist items to MovieCard friendly format (memoized to avoid re-allocation)
+  const formattedMovies = useMemo(
+    () =>
+      watchlist.map((item) => ({
+        id: item.movieId,
+        title: item.movieTitle,
+        poster_path: item.posterPath,
+      })),
+    [watchlist]
+  );
 
   return (
     <div className="cineverse-browse-page container">

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, Film, Sparkles } from 'lucide-react';
 import { useMovies } from '../../hooks/useMovies';
@@ -9,11 +9,15 @@ import '../popular/index.css';
 const Favorites = () => {
   const { favorites, loadingLists } = useMovies();
 
-  const formattedMovies = favorites.map((item) => ({
-    id: item.movieId,
-    title: item.movieTitle,
-    poster_path: item.posterPath,
-  }));
+  const formattedMovies = useMemo(
+    () =>
+      favorites.map((item) => ({
+        id: item.movieId,
+        title: item.movieTitle,
+        poster_path: item.posterPath,
+      })),
+    [favorites]
+  );
 
   return (
     <div className="cineverse-browse-page container">

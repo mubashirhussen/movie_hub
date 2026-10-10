@@ -44,8 +44,18 @@ const Navbar = () => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
     };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setMobileMenuOpen(false);
+        setUserDropdownOpen(false);
+      }
+    };
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   const handleLogout = () => {
@@ -179,7 +189,7 @@ const Navbar = () => {
           {isAuthenticated() ? (
             <>
               {/* Watchlist Quick Link */}
-              <Link to="/watchlist" className="nav-icon-btn" title="My Watchlist">
+              <Link to="/watchlist" className="nav-icon-btn" title="My Watchlist" aria-label={`My Watchlist (${watchlist.length} saved)`}>
                 <Bookmark size={19} />
                 {watchlist.length > 0 && (
                   <span className="nav-badge-count">{watchlist.length}</span>
@@ -187,7 +197,7 @@ const Navbar = () => {
               </Link>
 
               {/* Favorites Quick Link */}
-              <Link to="/favorites" className="nav-icon-btn" title="My Favorites">
+              <Link to="/favorites" className="nav-icon-btn" title="My Favorites" aria-label={`My Favorites (${favorites.length} saved)`}>
                 <Heart size={19} />
                 {favorites.length > 0 && (
                   <span className="nav-badge-count pink">{favorites.length}</span>
@@ -200,6 +210,8 @@ const Navbar = () => {
                   className="user-avatar-btn"
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                   aria-label="User profile menu"
+                  aria-haspopup="true"
+                  aria-expanded={userDropdownOpen}
                 >
                   <img
                     src={currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'}
@@ -267,7 +279,9 @@ const Navbar = () => {
           <button
             className="mobile-hamburger-btn"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle Navigation Menu"
+            aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-navigation-drawer"
           >
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -276,7 +290,7 @@ const Navbar = () => {
 
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="mobile-drawer-overlay">
+        <div id="mobile-navigation-drawer" className="mobile-drawer-overlay">
           <div className="mobile-drawer-content">
             <div className="mobile-search-wrapper">
               <SearchBar onSearchComplete={() => setMobileMenuOpen(false)} />

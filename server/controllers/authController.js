@@ -154,7 +154,7 @@ export const getMe = async (req, res, next) => {
       });
     }
 
-    const freshUser = await User.findById(req.user._id).select('-password');
+    const freshUser = await User.findById(req.user._id).select('-password').lean();
     if (!freshUser) {
       return res.status(404).json({
         success: false,

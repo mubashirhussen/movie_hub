@@ -56,6 +56,7 @@ const Login = () => {
         <form className="auth-form-layout" onSubmit={handleSubmit}>
           {/* Email */}
           <div className="auth-input-group">
+            <label htmlFor="login-email" className="sr-only">Email address</label>
             <input
               type="email"
               id="login-email"
@@ -65,11 +66,12 @@ const Login = () => {
               onChange={(e) => setEmail(e.target.value)}
               required
             />
-            <Mail size={16} className="auth-input-icon" />
+            <Mail size={16} className="auth-input-icon" aria-hidden="true" />
           </div>
 
           {/* Password */}
           <div className="auth-input-group">
+            <label htmlFor="login-password" className="sr-only">Password</label>
             <input
               type="password"
               id="login-password"
@@ -79,7 +81,7 @@ const Login = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-            <Lock size={16} className="auth-input-icon" />
+            <Lock size={16} className="auth-input-icon" aria-hidden="true" />
           </div>
 
           {/* Options Row */}

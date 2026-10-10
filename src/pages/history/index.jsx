@@ -92,27 +92,29 @@ const HistoryPage = () => {
               <button
                 type="button"
                 onClick={() => handleRemoveItem(item.movieId)}
-                title="Remove from history"
-                aria-label="Remove from history"
+                title={`Remove ${item.movieTitle || 'movie'} from watch history`}
+                aria-label={`Remove ${item.movieTitle || 'movie'} from watch history`}
                 style={{
                   position: 'absolute',
                   top: '0.65rem',
                   right: '0.65rem',
                   zIndex: 5,
-                  background: 'rgba(239, 68, 68, 0.85)',
+                  background: 'rgba(239, 68, 68, 0.9)',
                   border: 'none',
                   borderRadius: '50%',
-                  width: '28px',
-                  height: '28px',
+                  width: '36px',
+                  height: '36px',
+                  minWidth: '36px',
+                  minHeight: '36px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: '#ffffff',
                   cursor: 'pointer',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.5)',
+                  boxShadow: '0 4px 10px rgba(0, 0, 0, 0.55)',
                 }}
               >
-                <Trash2 size={13} />
+                <Trash2 size={16} />
               </button>
             </div>
           ))}

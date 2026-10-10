@@ -64,6 +64,7 @@ const Register = () => {
         <form className="auth-form-layout" onSubmit={handleSubmit}>
           {/* Name */}
           <div className="auth-input-group">
+            <label htmlFor="register-name" className="sr-only">Full Name</label>
             <input
               type="text"
               id="register-name"
@@ -73,11 +74,12 @@ const Register = () => {
               onChange={(e) => setName(e.target.value)}
               required
             />
-            <User size={16} className="auth-input-icon" />
+            <User size={16} className="auth-input-icon" aria-hidden="true" />
           </div>
 
           {/* Email */}
           <div className="auth-input-group">
+            <label htmlFor="register-email" className="sr-only">Email address</label>
             <input
               type="email"
               id="register-email"
@@ -87,11 +89,12 @@ const Register = () => {
               onChange={(e) => setEmail(e.target.value)}
               required
             />
-            <Mail size={16} className="auth-input-icon" />
+            <Mail size={16} className="auth-input-icon" aria-hidden="true" />
           </div>
 
           {/* Create Password */}
           <div className="auth-input-group">
+            <label htmlFor="register-password" className="sr-only">Create Password</label>
             <input
               type="password"
               id="register-password"
@@ -101,11 +104,12 @@ const Register = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-            <Lock size={16} className="auth-input-icon" />
+            <Lock size={16} className="auth-input-icon" aria-hidden="true" />
           </div>
 
           {/* Confirm Password */}
           <div className="auth-input-group">
+            <label htmlFor="register-confirm-password" className="sr-only">Confirm Password</label>
             <input
               type="password"
               id="register-confirm-password"
@@ -115,7 +119,7 @@ const Register = () => {
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
             />
-            <Lock size={16} className="auth-input-icon" />
+            <Lock size={16} className="auth-input-icon" aria-hidden="true" />
           </div>
 
           {/* Submit */}

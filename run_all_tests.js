@@ -8,6 +8,7 @@ const suites = [
   { name: 'Phase 6: Production Ops, Probes & Security', file: 'test_phase6_verification.js' },
   { name: 'Stage 2: E2E Realistic User Journeys', file: 'test_e2e_journeys.js' },
   { name: 'Stage 3: Production Security & Data Integrity', file: 'test_stage3_security.js' },
+  { name: 'Stage 4: Performance, Accessibility & UX', file: 'test_stage4_performance_a11y.js' },
 ];
 
 console.log('====================================================');

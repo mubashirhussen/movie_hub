@@ -135,12 +135,18 @@
   margin-bottom: 0.5rem;
 }
 
+.cineverse-movie-card:focus-within .card-hover-overlay {
+  opacity: 1;
+}
+
 .hover-action-btn {
-  width: 34px;
-  height: 34px;
+  min-width: 40px;
+  min-height: 40px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   color: #ffffff;
   display: flex;
   align-items: center;
@@ -150,9 +156,12 @@
   transition: all 0.2s ease;
 }
 
-.hover-action-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
+.hover-action-btn:hover,
+.hover-action-btn:focus-visible {
+  background: rgba(255, 255, 255, 0.35);
   transform: scale(1.1);
+  outline: 2px solid #8b5cf6;
+  outline-offset: 2px;
 }
 
 .hover-action-btn.active-wl {

@@ -209,3 +209,10 @@
     gap: 0.85rem;
   }
 }
+
+@media (max-width: 360px) {
+  .cineverse-movie-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
