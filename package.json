@@ -18,7 +18,8 @@
     "test:phase4": "node test_phase4_verification.js",
     "test:phase5": "node test_phase5_verification.js",
     "test:phase6": "node test_phase6_verification.js",
-    "test:e2e": "node test_e2e_journeys.js"
+    "test:e2e": "node test_e2e_journeys.js",
+    "test:security": "node test_stage3_security.js"
   },
   "keywords": [
     "react",

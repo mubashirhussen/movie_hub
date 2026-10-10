@@ -7,6 +7,7 @@ const suites = [
   { name: 'Phase 5: Authentication & User Profiles', file: 'test_phase5_verification.js' },
   { name: 'Phase 6: Production Ops, Probes & Security', file: 'test_phase6_verification.js' },
   { name: 'Stage 2: E2E Realistic User Journeys', file: 'test_e2e_journeys.js' },
+  { name: 'Stage 3: Production Security & Data Integrity', file: 'test_stage3_security.js' },
 ];
 
 console.log('====================================================');
@@ -42,6 +43,6 @@ if (!allPassed) {
   console.error('One or more test suites failed.');
   process.exit(1);
 } else {
-  console.log('All 6 test suites passed successfully (100% PASS rate)!');
+  console.log(`All ${suites.length} test suites passed successfully (100% PASS rate)!`);
   process.exit(0);
 }
