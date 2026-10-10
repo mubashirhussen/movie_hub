@@ -23,13 +23,8 @@ export class MemoryRateLimiter {
     }
   }
 
-  middleware() {
+  middleware({ skipLoopbackInDev = false } = {}) {
     return (req, res, next) => {
-      // In automated test environments or if disabled, pass through
-      if (process.env.DISABLE_RATE_LIMIT === 'true') {
-        return next();
-      }
-
       // Extract client IP address
       const clientIp =
         req.ip ||
@@ -53,10 +48,16 @@ export class MemoryRateLimiter {
       const remaining = Math.max(0, this.max - record.count);
       const resetSeconds = Math.ceil((record.resetTime - now) / 1000);
 
-      // Set standard RateLimit headers
+      // Always attach standard RateLimit response headers
       res.setHeader('RateLimit-Limit', this.max);
       res.setHeader('RateLimit-Remaining', remaining);
       res.setHeader('RateLimit-Reset', resetSeconds);
+
+      // In development mode, allow loopback localhost testing for auth without blocking developers
+      const isLoopback = clientIp === '127.0.0.1' || clientIp === '::1' || clientIp === '::ffff:127.0.0.1';
+      if (skipLoopbackInDev && isLoopback && process.env.NODE_ENV !== 'production') {
+        return next();
+      }
 
       if (record.count > this.max) {
         res.setHeader('Retry-After', resetSeconds);
@@ -78,13 +79,13 @@ export const apiLimiter = new MemoryRateLimiter({
   windowMs: 15 * 60 * 1000,
   max: 300,
   message: 'API rate limit exceeded. Please wait a moment before trying again.',
-}).middleware();
+}).middleware({ skipLoopbackInDev: false });
 
-// 2. Strict Authentication Rate Limiter: 25 requests per 15 minutes
+// 2. Strict Authentication Rate Limiter: 25 requests per 15 minutes (with dev loopback exemption)
 export const authLimiter = new MemoryRateLimiter({
   windowMs: 15 * 60 * 1000,
   max: 25,
   message: 'Too many authentication attempts. Please try again in a few minutes to protect your account.',
-}).middleware();
+}).middleware({ skipLoopbackInDev: true });
 
 export default { apiLimiter, authLimiter, MemoryRateLimiter };

@@ -12,12 +12,13 @@
     "build": "vite build",
     "preview": "vite preview",
     "start": "node server/server.js",
-    "test": "node test_phase2_verification.js && node test_phase3_verification.js && node test_phase4_verification.js && node test_phase5_verification.js && node test_phase6_verification.js",
+    "test": "node run_all_tests.js",
     "test:phase2": "node test_phase2_verification.js",
     "test:phase3": "node test_phase3_verification.js",
     "test:phase4": "node test_phase4_verification.js",
     "test:phase5": "node test_phase5_verification.js",
-    "test:phase6": "node test_phase6_verification.js"
+    "test:phase6": "node test_phase6_verification.js",
+    "test:e2e": "node test_e2e_journeys.js"
   },
   "keywords": [
     "react",
