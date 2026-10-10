@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Film, Sparkles, Filter, ChevronLeft, ChevronRight, Play, Star } from 'lucide-react';
 import movieService from '../../services/movieService';
 import MovieGrid from '../../components/movieGrid';
-import Pagination from '../../components/pagination';
+import Pagination from '../../components/Pagination';
 import Loading from '../../components/loading';
 import ErrorMessage from '../../components/errorMessage';
 import './index.css';

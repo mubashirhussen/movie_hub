@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { History as HistoryIcon, Film, Trash2 } from 'lucide-react';
 import authService from '../../services/authService';
-import MovieCard from '../../components/movieCard';
+import MovieCard from '../../components/MovieCard';
 import Loading from '../../components/loading';
 import ErrorMessage from '../../components/errorMessage';
 import '../popular/index.css';

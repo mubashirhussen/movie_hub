@@ -4,7 +4,15 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'cineverse_super_secret_jwt_key_2026';
+const getJwtSecret = () => {
+  if (!process.env.JWT_SECRET) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('FATAL: JWT_SECRET environment variable is missing in production');
+    }
+    return 'dev_only_jwt_secret_please_set_in_env';
+  }
+  return process.env.JWT_SECRET;
+};
 
 export const protect = async (req, res, next) => {
   let token;
@@ -24,7 +32,7 @@ export const protect = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, getJwtSecret());
 
     // Try finding user in MongoDB if connected
     try {

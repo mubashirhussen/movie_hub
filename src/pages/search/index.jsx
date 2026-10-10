@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, Film } from 'lucide-react';
 import MovieGrid from '../../components/movieGrid';
-import Pagination from '../../components/pagination';
+import Pagination from '../../components/Pagination';
 import Loading from '../../components/loading';
 import ErrorMessage from '../../components/errorMessage';
 import movieService from '../../services/movieService';

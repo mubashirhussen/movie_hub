@@ -1,5 +1,5 @@
 import React from 'react';
-import MovieCard from '../movieCard';
+import MovieCard from '../MovieCard';
 import Loading from '../loading';
 import './index.css';
 

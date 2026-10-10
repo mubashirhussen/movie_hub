@@ -100,37 +100,32 @@ async function runAudit() {
     console.log(`✅ [PASSED] Protected Profile Route -> HTTP ${profileRes.status}, Email: ${profileRes.data?.data?.email || profileRes.data?.email}`);
     results.authEndpoints.push({ test: 'Protected Profile Route', status: 'PASSED' });
 
-    // Test Watchlist
-    const addWl = await axios.post(`${BASE_URL}/watchlist`, {
-      movieId: 1008,
-      title: 'RRR',
-      posterPath: 'https://img.youtube.com/vi/NgBoMJy386M/maxresdefault.jpg',
-      voteAverage: 8.8
+    // Test Watchlist (both Frontend URL param format and JSON body format)
+    const addWl = await axios.post(`${BASE_URL}/watchlist/1008`, {
+      movieTitle: 'RRR',
+      posterPath: 'https://image.tmdb.org/t/p/w500/wE0noFU9AQ7FPyvxWk9mIPzL9yX.jpg',
     }, authHeaders);
-    console.log(`✅ [PASSED] Add to Watchlist -> HTTP ${addWl.status}`);
+    console.log(`✅ [PASSED] Add to Watchlist (Frontend Signature) -> HTTP ${addWl.status}`);
 
     const getWl = await axios.get(`${BASE_URL}/watchlist`, authHeaders);
     console.log(`✅ [PASSED] Get Watchlist -> HTTP ${getWl.status}, Items: ${getWl.data?.data?.length || getWl.data?.length}`);
 
-    // Test Favorites
-    const addFav = await axios.post(`${BASE_URL}/favorites`, {
-      movieId: 1008,
-      title: 'RRR',
-      posterPath: 'https://img.youtube.com/vi/NgBoMJy386M/maxresdefault.jpg',
-      voteAverage: 8.8
+    // Test Favorites (Frontend URL param format)
+    const addFav = await axios.post(`${BASE_URL}/favorites/1008`, {
+      movieTitle: 'RRR',
+      posterPath: 'https://image.tmdb.org/t/p/w500/wE0noFU9AQ7FPyvxWk9mIPzL9yX.jpg',
     }, authHeaders);
-    console.log(`✅ [PASSED] Add to Favorites -> HTTP ${addFav.status}`);
+    console.log(`✅ [PASSED] Add to Favorites (Frontend Signature) -> HTTP ${addFav.status}`);
 
     const getFav = await axios.get(`${BASE_URL}/favorites`, authHeaders);
     console.log(`✅ [PASSED] Get Favorites -> HTTP ${getFav.status}, Items: ${getFav.data?.data?.length || getFav.data?.length}`);
 
     // Test History
-    const addHist = await axios.post(`${BASE_URL}/users/history`, {
-      movieId: 1008,
-      title: 'RRR',
-      posterPath: 'https://img.youtube.com/vi/NgBoMJy386M/maxresdefault.jpg'
+    const addHist = await axios.post(`${BASE_URL}/users/history/1008`, {
+      movieTitle: 'RRR',
+      posterPath: 'https://image.tmdb.org/t/p/w500/wE0noFU9AQ7FPyvxWk9mIPzL9yX.jpg'
     }, authHeaders);
-    console.log(`✅ [PASSED] Add to History -> HTTP ${addHist.status}`);
+    console.log(`✅ [PASSED] Add to History (Frontend Signature) -> HTTP ${addHist.status}`);
 
     const getHist = await axios.get(`${BASE_URL}/users/history`, authHeaders);
     console.log(`✅ [PASSED] Get History -> HTTP ${getHist.status}, Items: ${getHist.data?.data?.length || getHist.data?.length}`);

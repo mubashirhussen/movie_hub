@@ -26,7 +26,7 @@ import authService from '../../services/authService';
 import CastSection from '../../components/castSection';
 import MovieActions from '../../components/movieActions';
 import ProviderLinks from '../../components/providerLinks';
-import TrailerModal from '../../components/trailerModal';
+import TrailerModal from '../../components/TrailerModal';
 import DownloadModal from '../../components/downloadModal';
 import YouTubeMediaHub from '../../components/youtubeMediaHub';
 import MovieGrid from '../../components/movieGrid';

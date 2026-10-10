@@ -1,6 +1,6 @@
 import React from 'react';
 import { Users } from 'lucide-react';
-import CastCard from '../castCard';
+import CastCard from '../CastCard';
 import './index.css';
 
 const CastSection = ({ cast = [], loading = false }) => {

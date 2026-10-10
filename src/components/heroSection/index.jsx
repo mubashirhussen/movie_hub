@@ -4,7 +4,7 @@ import { Play, Info, Star, Calendar, Bookmark, Heart, Sparkles } from 'lucide-re
 import { getBackdropUrl } from '../../utils/imageUrl';
 import { formatRating, formatYear } from '../../utils/formatCurrency';
 import { useMovies } from '../../hooks/useMovies';
-import TrailerModal from '../trailerModal';
+import TrailerModal from '../TrailerModal';
 import movieService from '../../services/movieService';
 import './index.css';
 

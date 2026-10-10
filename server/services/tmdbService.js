@@ -5,7 +5,11 @@ import { seedMovies } from '../data/seedMovies.js';
 dotenv.config();
 
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
-const TMDB_API_KEY = process.env.TMDB_API_KEY || 'c45a857c193f6302f2b5061c3b85e743';
+const TMDB_API_KEY = process.env.TMDB_API_KEY;
+
+if (!TMDB_API_KEY) {
+  console.warn('⚠️ [TMDB] TMDB_API_KEY is not defined in environment variables. Running in resilient local/demo catalog mode.');
+}
 
 const tmdbClient = axios.create({
   baseURL: TMDB_BASE_URL,
