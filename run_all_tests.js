@@ -11,6 +11,7 @@ const suites = [
   { name: 'Stage 4: Performance, Accessibility & UX', file: 'test_stage4_performance_a11y.js' },
   { name: 'Stage 5: Staging Deployment Readiness', file: 'test_stage5_deployment_readiness.js' },
   { name: 'Stage 7: CI/CD & Automated Release Pipeline', file: 'test_stage7_pipeline_verification.js' },
+  { name: 'Stage 8: Final Acceptance & Handover Verification', file: 'test_stage8_final_acceptance.js' },
 ];
 
 console.log('====================================================');

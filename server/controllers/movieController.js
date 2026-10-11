@@ -98,6 +98,7 @@ export const getMovieDetails = async (req, res, next) => {
       data: {
         ...movie,
         applicationViews: appViews,
+        viewCount: appViews,
       },
     });
   } catch (error) {

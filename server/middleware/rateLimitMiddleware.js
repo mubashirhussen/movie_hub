@@ -25,6 +25,10 @@ export class MemoryRateLimiter {
 
   middleware({ skipLoopbackInDev = false } = {}) {
     return (req, res, next) => {
+      if (process.env.DISABLE_RATE_LIMIT === 'true') {
+        return next();
+      }
+
       // Extract client IP address
       const clientIp =
         req.ip ||
@@ -53,9 +57,9 @@ export class MemoryRateLimiter {
       res.setHeader('RateLimit-Remaining', remaining);
       res.setHeader('RateLimit-Reset', resetSeconds);
 
-      // In development mode, allow loopback localhost testing for auth without blocking developers
+      // In development/test mode, allow loopback localhost testing without blocking developers
       const isLoopback = clientIp === '127.0.0.1' || clientIp === '::1' || clientIp === '::ffff:127.0.0.1';
-      if (skipLoopbackInDev && isLoopback && process.env.NODE_ENV !== 'production') {
+      if ((skipLoopbackInDev || process.env.NODE_ENV !== 'production') && isLoopback) {
         return next();
       }
 
