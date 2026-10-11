@@ -87,21 +87,43 @@ Stores registered user accounts, salted password hashes, and authorization roles
 ---
 
 ### Collection: `watchlists` ([server/models/Watchlist.js](file:///c:/Users/Mubashirhussensk/OneDrive/Desktop/Movie_app/server/models/Watchlist.js))
-Stores user-curated bookmarked movies for future viewing.
+Stores user-curated bookmarked movies organized by default viewing status or assigned to user-defined custom lists.
 
 | Field | Type | Required | Constraints / Defaults | Description |
 | :--- | :--- | :--- | :--- | :--- |
 | `_id` | `ObjectId` | Auto | Primary Key | Unique entry identifier |
 | `userId` | `ObjectId` | Yes | `ref: 'User'` | Reference to parent `User` document |
+| `customListId` | `ObjectId` | No | `ref: 'CustomWatchlist'`, Default: `null` | Reference to parent custom watchlist (null for default status list) |
+| `status` | `String` | No | Enum: `['want_to_watch', 'watching', 'watched']`, Default: `'want_to_watch'` | Viewing status lifecycle stage |
 | `movieId` | `Number` | Yes | Integer | TMDB / Catalog movie ID |
 | `movieTitle`| `String` | Yes | String | Cached movie title for fast rendering |
 | `posterPath`| `String` | No | Default: `""` | Cached poster path for offline display |
+| `releaseDate`| `String` | No | Default: `""` | Movie release date |
+| `voteAverage`| `Number` | No | Default: `0` | TMDB verified rating score |
 | `addedAt` | `Date` | No | Default: `Date.now` | Bookmark timestamp |
 
 **Indexes**:
-- Compound Unique Index: `{ userId: 1, movieId: 1 }` (`unique: true`)
-  - Ensures a user can never add the same movie to their watchlist more than once.
-  - Ensures fast queries when checking `isBookmarked` for a specific movie.
+- Compound Unique Index: `{ userId: 1, movieId: 1, customListId: 1 }` (`unique: true`)
+  - Guarantees a movie cannot be duplicated within the same list (default or custom).
+  - Permits the identical movie to reside across distinct custom collections and viewing lists.
+
+---
+
+### Collection: `customwatchlists` ([server/models/CustomWatchlist.js](file:///c:/Users/Mubashirhussensk/OneDrive/Desktop/Movie_app/server/models/CustomWatchlist.js))
+Stores custom user-created movie collections with user-defined names and optional descriptions.
+
+| Field | Type | Required | Constraints / Defaults | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `_id` | `ObjectId` | Auto | Primary Key | Unique list identifier |
+| `userId` | `ObjectId` | Yes | `ref: 'User'` | Owner user document reference |
+| `name` | `String` | Yes | Max: 100 characters, Trimmed | Unique list name per user |
+| `description`| `String` | No | Max: 500 characters, Default: `""` | Curated description of list intent |
+| `createdAt`| `Date` | Auto | Timestamp | Creation timestamp |
+| `updatedAt`| `Date` | Auto | Timestamp | Last update timestamp |
+
+**Indexes**:
+- Compound Unique Index: `{ userId: 1, name: 1 }` (`unique: true`)
+  - Prevents a user from creating duplicate lists with identical names, while allowing different users to own lists with the same title.
 
 ---
 

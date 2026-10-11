@@ -157,6 +157,7 @@ MongoDB schemas managed via Mongoose:
 | `GET` | `/api/auth/me` | Fetch active user profile | **Yes** (Bearer Token) |
 | `GET` | `/api/movies/popular` | Retrieve popular movies catalog | No |
 | `GET` | `/api/movies/top-rated` | Retrieve top-rated movies catalog | No |
+| `GET` | `/api/movies/discover` | Multi-filter discovery (genre, rating, runtime, language, year, sort) | No |
 | `GET` | `/api/movies/upcoming` | Retrieve upcoming movies catalog | No |
 | `GET` | `/api/movies/now-playing` | Retrieve now-playing movies catalog | No |
 | `GET` | `/api/movies/genres` | Retrieve movie genre taxonomy | No |
@@ -167,9 +168,17 @@ MongoDB schemas managed via Mongoose:
 | `GET` | `/api/movies/:id/trailer` | Official trailers and preview video keys | No |
 | `GET` | `/api/movies/:id/providers` | Streaming availability providers | No |
 | `POST` | `/api/movies/:id/view` | Atomically increment application view count | No |
-| `GET` | `/api/watchlist` | Retrieve user watchlist items | **Yes** |
-| `POST` | `/api/watchlist` | Add movie to user watchlist | **Yes** |
-| `DELETE` | `/api/watchlist/:movieId` | Remove movie from user watchlist | **Yes** |
+| `GET` | `/api/watchlist` | Retrieve default watchlist (supports `?status=` and `?sortBy=`) | **Yes** |
+| `POST` | `/api/watchlist` | Add movie with viewing status | **Yes** |
+| `PATCH` | `/api/watchlist/:movieId/status` | Update viewing status (want to watch / watching / watched) | **Yes** |
+| `DELETE` | `/api/watchlist/:movieId` | Remove movie from default watchlist | **Yes** |
+| `GET` | `/api/watchlists` | Retrieve overview summary with counts and custom lists | **Yes** |
+| `POST` | `/api/watchlists` | Create custom watchlist | **Yes** |
+| `GET` | `/api/watchlists/:id` | Retrieve custom watchlist details and contained movies | **Yes** |
+| `PATCH` | `/api/watchlists/:id` | Update custom watchlist name or description | **Yes** |
+| `DELETE` | `/api/watchlists/:id` | Delete custom watchlist and all contained movies | **Yes** |
+| `POST` | `/api/watchlists/:id/movies` | Add movie to custom watchlist | **Yes** |
+| `DELETE` | `/api/watchlists/:id/movies/:movieId` | Remove movie from custom watchlist | **Yes** |
 | `GET` | `/api/favorites` | Retrieve user favorite movies | **Yes** |
 | `POST` | `/api/favorites` | Add movie to user favorites | **Yes** |
 | `DELETE` | `/api/favorites/:movieId` | Remove movie from user favorites | **Yes** |
@@ -238,7 +247,7 @@ VITE_API_BASE_URL=/api
 
 ## 13. Testing Instructions
 CineVerse includes a self-bootstrapping master regression runner covering all development phases and production stages:
-- **Run Master Regression Test Suite (All 12 Suites)**:
+- **Run Master Regression Test Suite (All 13 Suites)**:
   ```bash
   npm test
   ```
@@ -251,6 +260,7 @@ CineVerse includes a self-bootstrapping master regression runner covering all de
   npm run test:stage7    # Stage 7: CI/CD pipeline verification
   npm run test:stage8    # Stage 8: Final acceptance test suite
   npm run test:stage10   # Stage 10: Ratings, reviews & community suite
+  npm run test:stage11   # Stage 11: Advanced discovery & smart watchlists
   ```
 - **Run Dependency Security Audit**:
   ```bash

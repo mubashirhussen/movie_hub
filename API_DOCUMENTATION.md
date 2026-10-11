@@ -188,8 +188,36 @@ The CineVerse backend exposes a RESTful JSON API organized around resource contr
 }
 ```
 
+### `GET /api/movies/discover`
+- **Purpose**: Advanced multi-filter and sorted movie discovery.
+- **Auth**: None
+- **Query Params**:
+  - `genre` / `with_genres`: TMDB genre ID or genre name
+  - `sortBy` / `sort_by`: `popularity.desc`, `popularity.asc`, `vote_average.desc`, `vote_average.asc`, `primary_release_date.desc`, `primary_release_date.asc`, `title.asc`, `title.desc`
+  - `year`: Single release year (e.g. `2024`)
+  - `yearMin` / `year_min`: Minimum release year for era/decade filtering (e.g. `1990`)
+  - `yearMax` / `year_max`: Maximum release year for era/decade filtering (e.g. `1999`)
+  - `language` / `with_original_language`: ISO-639-1 code (`te`, `hi`, `en`, `ta`, `kn`, `ml`, `es`, `ja`, `ko`, `fr`)
+  - `minRating` / `min_rating`: Minimum verified rating (0.0 to 10.0)
+  - `minRuntime` / `min_runtime`: Minimum runtime in minutes (e.g. `90`)
+  - `maxRuntime` / `max_runtime`: Maximum runtime in minutes (e.g. `150`)
+  - `industry`: Regional cinema industry (`tollywood`, `bollywood`, `hollywood`, `kollywood`, `sandalwood`, `mollywood`)
+  - `page`: Page number (1 to 500)
+- **Response (200 OK)**:
+```json
+{
+  "success": true,
+  "data": {
+    "page": 1,
+    "results": [ ... ],
+    "total_pages": 42,
+    "total_results": 840
+  }
+}
+```
+
 ### `GET /api/movies/industry/:industry`
-- **Purpose**: Retrieve curated catalog by film industry (`hollywood`, `bollywood`, `anime`, `korean`, `tollywood`, `kollywood`).
+- **Purpose**: Retrieve curated catalog by film industry (`hollywood`, `bollywood`, `tollywood`, `kollywood`, `sandalwood`, `mollywood`).
 - **Auth**: None
 - **Response (200 OK)**: Returns industry-tailored movie list.
 
@@ -288,15 +316,19 @@ The CineVerse backend exposes a RESTful JSON API organized around resource contr
 
 ---
 
-## 4. Watchlist & Favorites (`/api/watchlist` & `/api/favorites`)
+## 4. Smart Watchlists & Collections (`/api/watchlist` & `/api/watchlists`)
 
 ### `GET /api/watchlist`
-- **Purpose**: Fetch all movies stored in the authenticated user's watchlist.
+- **Purpose**: Fetch all movies stored in the authenticated user's default watchlist.
 - **Auth**: **Required** (`Bearer <token>`)
+- **Query Params**:
+  - `status`: Filter by viewing status (`want_to_watch`, `watching`, `watched`)
+  - `sortBy`: Sort order (`date_added`, `title`, `release_date`, `rating`)
 - **Response (200 OK)**:
 ```json
 {
   "success": true,
+  "count": 1,
   "data": [
     {
       "_id": "6708b3e5e81fc69c73b06385",
@@ -304,6 +336,8 @@ The CineVerse backend exposes a RESTful JSON API organized around resource contr
       "movieId": 550,
       "movieTitle": "Fight Club",
       "posterPath": "/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg",
+      "status": "want_to_watch",
+      "voteAverage": 8.4,
       "addedAt": "2026-10-11T09:35:00.000Z"
     }
   ]
@@ -311,31 +345,96 @@ The CineVerse backend exposes a RESTful JSON API organized around resource contr
 ```
 
 ### `POST /api/watchlist`
-- **Purpose**: Add a movie to the user's watchlist.
+- **Purpose**: Add a movie to the user's default watchlist with viewing status.
 - **Auth**: **Required**
 - **Request Body**:
 ```json
 {
   "movieId": 550,
   "movieTitle": "Fight Club",
-  "posterPath": "/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg"
+  "posterPath": "/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg",
+  "status": "want_to_watch"
 }
 ```
 - **Response (201 Created)**: Returns created watchlist document.
-- **Error (409 Conflict)**: Returned if movie is already in user watchlist.
+- **Response (200 OK, action='exists')**: If movie is already in user watchlist.
+
+### `PATCH /api/watchlist/:movieId/status`
+- **Purpose**: Transition movie between viewing statuses (`want_to_watch`, `watching`, `watched`).
+- **Auth**: **Required**
+- **Request Body**: `{ "status": "watching" }`
+- **Response (200 OK)**: Returns updated item.
 
 ### `DELETE /api/watchlist/:movieId`
-- **Purpose**: Remove a movie from the user's watchlist.
+- **Purpose**: Remove a movie from the user's default watchlist.
+- **Auth**: **Required**
+- **Response (200 OK)**: `{ "success": true, "message": "Movie removed from watchlist" }`
+
+### `GET /api/watchlists` / `GET /api/watchlist/summary`
+- **Purpose**: Retrieve overall watchlist summary (counts by viewing status & all user custom lists).
 - **Auth**: **Required**
 - **Response (200 OK)**:
 ```json
 {
   "success": true,
-  "message": "Movie removed from watchlist"
+  "data": {
+    "defaultLists": [
+      { "id": "want_to_watch", "name": "Want to Watch", "count": 12 },
+      { "id": "watching", "name": "Watching", "count": 3 },
+      { "id": "watched", "name": "Watched", "count": 28 }
+    ],
+    "totalDefaultCount": 43,
+    "customLists": [
+      {
+        "_id": "6708b8b0e81fc69c73b06412",
+        "name": "Retro Telugu Classics",
+        "description": "Curated 1980s cinema gems",
+        "itemCount": 5,
+        "createdAt": "2026-10-11T10:00:00.000Z"
+      }
+    ]
+  }
 }
 ```
 
-*(Identical API pattern applies to `/api/favorites` and `/api/history`)*
+### `POST /api/watchlists`
+- **Purpose**: Create a new custom watchlist.
+- **Auth**: **Required**
+- **Request Body**:
+```json
+{
+  "name": "Weekend Thrillers",
+  "description": "Must-watch suspense movies"
+}
+```
+- **Response (201 Created)**: Returns created custom list metadata.
+
+### `GET /api/watchlists/:id`
+- **Purpose**: Retrieve single custom watchlist and its contained movies.
+- **Auth**: **Required** (Strict owner authorization)
+- **Response (200 OK)**: Returns list details and `movies: [...]` array.
+
+### `PATCH /api/watchlists/:id`
+- **Purpose**: Update custom watchlist name or description.
+- **Auth**: **Required** (Strict owner authorization)
+- **Request Body**: `{ "name": "Updated Name", "description": "Updated Description" }`
+- **Response (200 OK)**: Returns updated list.
+
+### `DELETE /api/watchlists/:id`
+- **Purpose**: Delete custom watchlist and all contained movie entries.
+- **Auth**: **Required** (Strict owner authorization)
+- **Response (200 OK)**: `{ "success": true, "message": "Custom watchlist and its items deleted successfully" }`
+
+### `POST /api/watchlists/:id/movies`
+- **Purpose**: Add a movie to a specific custom watchlist (prevents duplicate movies within the same list).
+- **Auth**: **Required** (Strict owner authorization)
+- **Request Body**: `{ "movieId": 1001, "movieTitle": "Sagara Sangamam", "posterPath": "..." }`
+- **Response (201 Created)**: Returns created list item.
+
+### `DELETE /api/watchlists/:id/movies/:movieId`
+- **Purpose**: Remove a movie from a specific custom watchlist.
+- **Auth**: **Required** (Strict owner authorization)
+- **Response (200 OK)**: `{ "success": true, "message": "Movie removed from custom watchlist" }`
 
 ---
 

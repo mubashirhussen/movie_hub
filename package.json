@@ -29,6 +29,8 @@
     "test:acceptance": "node test_stage8_final_acceptance.js",
     "test:stage10": "node test_stage10_community.js",
     "test:community": "node test_stage10_community.js",
+    "test:stage11": "node test_stage11_discovery_watchlist.js",
+    "test:watchlist": "node test_stage11_discovery_watchlist.js",
     "test:ci": "node run_all_tests.js",
     "audit": "npm audit --audit-level=high"
   },

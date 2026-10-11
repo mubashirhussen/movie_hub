@@ -17,6 +17,12 @@ const SearchPage = () => {
   const genreParam = searchParams.get('genre') || '';
   const sortByParam = searchParams.get('sortBy') || 'popularity.desc';
   const yearParam = searchParams.get('year') || '';
+  const yearMinParam = searchParams.get('yearMin') || '';
+  const yearMaxParam = searchParams.get('yearMax') || '';
+  const languageParam = searchParams.get('language') || '';
+  const minRatingParam = searchParams.get('minRating') || '';
+  const minRuntimeParam = searchParams.get('minRuntime') || '';
+  const maxRuntimeParam = searchParams.get('maxRuntime') || '';
   const industryParam = searchParams.get('industry') || '';
   const pageParam = Math.max(1, parseInt(searchParams.get('page')) || 1);
 
@@ -60,6 +66,12 @@ const SearchPage = () => {
             genre: genreParam || null,
             sortBy: sortByParam,
             year: yearParam || null,
+            yearMin: yearMinParam || null,
+            yearMax: yearMaxParam || null,
+            language: languageParam || null,
+            minRating: minRatingParam || null,
+            minRuntime: minRuntimeParam || null,
+            maxRuntime: maxRuntimeParam || null,
             industry: industryParam || null,
             page: pageParam,
           },
@@ -89,7 +101,21 @@ const SearchPage = () => {
         abortControllerRef.current.abort();
       }
     };
-  }, [queryParam, actorParam, genreParam, sortByParam, yearParam, industryParam, pageParam]);
+  }, [
+    queryParam,
+    actorParam,
+    genreParam,
+    sortByParam,
+    yearParam,
+    yearMinParam,
+    yearMaxParam,
+    languageParam,
+    minRatingParam,
+    minRuntimeParam,
+    maxRuntimeParam,
+    industryParam,
+    pageParam,
+  ]);
 
   // Handle filter changes and sync to URL query string
   const handleFilterChange = (newFilters) => {
@@ -130,7 +156,7 @@ const SearchPage = () => {
 
   // Determine Main Heading and Subheading based on active mode
   let pageTitle = 'Discover Movies';
-  let pageSubtitle = 'Filter by genre, sort by popularity or ratings, and browse cinema industries';
+  let pageSubtitle = 'Filter by genre, rating, runtime, era, language, and explore cinema industries';
   let badgeIcon = <Compass size={24} />;
   let badgeClass = 'compass';
 
@@ -186,6 +212,12 @@ const SearchPage = () => {
           selectedGenre={genreParam}
           selectedSort={sortByParam}
           selectedYear={yearParam}
+          selectedYearMin={yearMinParam}
+          selectedYearMax={yearMaxParam}
+          selectedLanguage={languageParam}
+          selectedMinRating={minRatingParam}
+          selectedMinRuntime={minRuntimeParam}
+          selectedMaxRuntime={maxRuntimeParam}
           selectedIndustry={industryParam}
           onFilterChange={handleFilterChange}
           onResetFilters={handleResetFilters}

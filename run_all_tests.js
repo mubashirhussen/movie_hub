@@ -13,6 +13,7 @@ const suites = [
   { name: 'Stage 7: CI/CD & Automated Release Pipeline', file: 'test_stage7_pipeline_verification.js' },
   { name: 'Stage 8: Final Acceptance & Handover Verification', file: 'test_stage8_final_acceptance.js' },
   { name: 'Stage 10: Ratings, Reviews & Community', file: 'test_stage10_community.js' },
+  { name: 'Stage 11: Advanced Discovery & Smart Watchlists', file: 'test_stage11_discovery_watchlist.js' },
 ];
 
 console.log('====================================================');

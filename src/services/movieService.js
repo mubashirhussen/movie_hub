@@ -94,12 +94,30 @@ export const getGenres = async (options = {}) => {
 };
 
 export const discoverMovies = async (
-  { genre = null, sortBy = 'popularity.desc', year = null, industry = null, page = 1 } = {},
+  {
+    genre = null,
+    sortBy = 'popularity.desc',
+    year = null,
+    yearMin = null,
+    yearMax = null,
+    language = null,
+    minRating = null,
+    minRuntime = null,
+    maxRuntime = null,
+    industry = null,
+    page = 1,
+  } = {},
   options = {}
 ) => {
   const params = { page, sortBy };
   if (genre) params.genre = genre;
   if (year) params.year = year;
+  if (yearMin) params.yearMin = yearMin;
+  if (yearMax) params.yearMax = yearMax;
+  if (language) params.language = language;
+  if (minRating !== null && minRating !== undefined && minRating !== '') params.minRating = minRating;
+  if (minRuntime) params.minRuntime = minRuntime;
+  if (maxRuntime) params.maxRuntime = maxRuntime;
   if (industry) params.industry = industry;
 
   const response = await api.get('/movies/discover', { params, ...options });

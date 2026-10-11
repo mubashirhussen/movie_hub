@@ -45,7 +45,7 @@ export const MovieProvider = ({ children }) => {
     return favorites.some((item) => Number(item.movieId) === Number(movieId));
   };
 
-  const toggleWatchlist = async (movie) => {
+  const toggleWatchlist = async (movie, options = {}) => {
     if (!isAuthenticated()) {
       return { success: false, requireAuth: true, message: 'Please login to manage your watchlist' };
     }
@@ -55,7 +55,7 @@ export const MovieProvider = ({ children }) => {
     const posterPath = movie.poster_path || movie.posterPath || '';
 
     try {
-      const res = await watchlistService.addToWatchlist(movieId, movieTitle, posterPath);
+      const res = await watchlistService.addToWatchlist(movieId, movieTitle, posterPath, options);
       await fetchUserLists();
       return { success: true, action: res.action, message: res.message };
     } catch (err) {

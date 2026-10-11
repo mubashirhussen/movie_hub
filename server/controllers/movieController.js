@@ -299,16 +299,41 @@ export const getGenres = async (req, res, next) => {
   }
 };
 
-// 14. Discover Movies (Genre, Year, Industry, Sorting, Pagination)
+// 14. Discover Movies (Genre, Year, Year Range, Language, Rating, Runtime, Industry, Sorting, Pagination)
 export const discover = async (req, res, next) => {
   try {
-    const { genre, sortBy, year, industry } = req.query;
+    const {
+      genre,
+      sortBy,
+      sort_by,
+      year,
+      yearMin,
+      year_min,
+      yearMax,
+      year_max,
+      language,
+      with_original_language,
+      minRating,
+      min_rating,
+      minRuntime,
+      min_runtime,
+      maxRuntime,
+      max_runtime,
+      industry,
+    } = req.query;
+
     const page = parseSafePage(req.query.page);
 
     const data = await tmdbService.discoverMovies({
       genre: genre ? String(genre).trim() : null,
-      sortBy: sortBy ? String(sortBy).trim() : 'popularity.desc',
+      sortBy: (sortBy || sort_by) ? String(sortBy || sort_by).trim() : 'popularity.desc',
       year: year ? parseInt(year) : null,
+      yearMin: (yearMin || year_min) ? parseInt(yearMin || year_min) : null,
+      yearMax: (yearMax || year_max) ? parseInt(yearMax || year_max) : null,
+      language: (language || with_original_language) ? String(language || with_original_language).trim() : null,
+      minRating: (minRating || min_rating) ? parseFloat(minRating || min_rating) : null,
+      minRuntime: (minRuntime || min_runtime) ? parseInt(minRuntime || min_runtime) : null,
+      maxRuntime: (maxRuntime || max_runtime) ? parseInt(maxRuntime || max_runtime) : null,
       industry: industry ? String(industry).trim() : null,
       page,
     });

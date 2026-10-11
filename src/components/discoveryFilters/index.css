@@ -112,24 +112,30 @@
   color: #ffffff;
 }
 
-/* Expandable Genre Chips */
-.genre-chips-container {
+/* Expandable Discovery Drawer Panel */
+.discovery-drawer-panel {
   background: #141928;
   border-radius: 12px;
-  padding: 1rem;
+  padding: 1.25rem;
   border: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 1.25rem;
 }
 
-.genre-chips-header {
+.drawer-filter-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.drawer-section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.genre-chips-label {
+.drawer-section-label {
   display: flex;
   align-items: center;
   gap: 0.45rem;
@@ -140,7 +146,13 @@
   letter-spacing: 0.05em;
 }
 
-.clear-genre-btn {
+.drawer-section-sub {
+  font-size: 0.72rem;
+  color: #64748b;
+  font-style: italic;
+}
+
+.clear-section-btn {
   background: none;
   border: none;
   color: #f472b6;
@@ -149,13 +161,13 @@
   text-decoration: underline;
 }
 
-.genre-chips-grid {
+.chips-grid {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
 }
 
-.genre-chip {
+.filter-chip {
   padding: 0.4rem 0.85rem;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.05);
@@ -167,18 +179,23 @@
   transition: all 0.18s ease;
 }
 
-.genre-chip:hover {
+.filter-chip:hover {
   background: rgba(255, 255, 255, 0.12);
   color: #ffffff;
   border-color: rgba(255, 255, 255, 0.2);
 }
 
-.genre-chip.active {
+.filter-chip.active {
   background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
   border-color: transparent;
   color: #ffffff;
   font-weight: 700;
   box-shadow: 0 4px 12px rgba(236, 72, 153, 0.35);
+}
+
+.filter-chip.rating-chip.active {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
 }
 
 /* Active Filter Badges */

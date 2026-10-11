@@ -71,6 +71,7 @@ app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/movies', movieRoutes);
 app.use('/api/people', peopleRoutes);
 app.use('/api/watchlist', watchlistRoutes);
+app.use('/api/watchlists', watchlistRoutes);
 app.use('/api/favorites', favoriteRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/history', historyRoutes);

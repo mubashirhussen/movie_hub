@@ -640,31 +640,65 @@ const ALLOWED_SORT_OPTIONS = new Set([
   'vote_average.asc',
   'primary_release_date.desc',
   'primary_release_date.asc',
+  'title.asc',
+  'title.desc',
 ]);
 
-// 12. Discover Movies with genre, year, industry, and sorting
+const LANGUAGE_MAP = {
+  en: 'english',
+  hi: 'hindi',
+  te: 'telugu',
+  ta: 'tamil',
+  kn: 'kannada',
+  ml: 'malayalam',
+  es: 'spanish',
+  ja: 'japanese',
+  ko: 'korean',
+  fr: 'french',
+  de: 'german',
+  it: 'italian',
+  zh: 'chinese',
+};
+
+// 12. Discover Movies with genre, year/year-range, rating, runtime, language, industry, and sorting
 export const discoverMovies = async ({
   genre = null,
   sortBy = 'popularity.desc',
   year = null,
+  yearMin = null,
+  yearMax = null,
+  language = null,
+  minRating = null,
+  minRuntime = null,
+  maxRuntime = null,
   industry = null,
   page = 1,
 } = {}) => {
   const safeSort = ALLOWED_SORT_OPTIONS.has(sortBy) ? sortBy : 'popularity.desc';
   const safePage = Math.max(1, Math.min(parseInt(page) || 1, 500));
   const safeYear = year && !isNaN(year) && Number(year) >= 1900 && Number(year) <= 2100 ? Number(year) : null;
+  const safeYearMin = yearMin && !isNaN(yearMin) && Number(yearMin) >= 1900 && Number(yearMin) <= 2100 ? Number(yearMin) : null;
+  const safeYearMax = yearMax && !isNaN(yearMax) && Number(yearMax) >= 1900 && Number(yearMax) <= 2100 ? Number(yearMax) : null;
+  const safeMinRating = minRating && !isNaN(minRating) && Number(minRating) >= 0 && Number(minRating) <= 10 ? Number(minRating) : null;
+  const safeMinRuntime = minRuntime && !isNaN(minRuntime) && Number(minRuntime) >= 0 && Number(minRuntime) <= 600 ? Number(minRuntime) : null;
+  const safeMaxRuntime = maxRuntime && !isNaN(maxRuntime) && Number(maxRuntime) >= 0 && Number(maxRuntime) <= 600 ? Number(maxRuntime) : null;
+  const safeLanguage = language ? String(language).trim().toLowerCase() : null;
   const genreId = genre ? String(genre).trim() : null;
 
   const indConfig = industry ? getIndustryConfig(industry) : null;
-  const cacheKey = `discover_${genreId || 'all'}_${safeSort}_${safeYear || 'all'}_${industry || 'all'}_${safePage}`;
+  const cacheKey = `discover_${genreId || 'all'}_${safeSort}_${safeYear || 'all'}_${safeYearMin || 'all'}_${safeYearMax || 'all'}_${safeLanguage || 'all'}_${safeMinRating || 'all'}_${safeMinRuntime || 'all'}_${safeMaxRuntime || 'all'}_${industry || 'all'}_${safePage}`;
   const cached = getFromCache(cacheKey);
   if (cached) return cached;
 
   try {
+    let tmdbSort = safeSort;
+    if (safeSort === 'title.asc') tmdbSort = 'original_title.asc';
+    if (safeSort === 'title.desc') tmdbSort = 'original_title.desc';
+
     const tmdbParams = {
       api_key: TMDB_API_KEY,
       language: 'en-US',
-      sort_by: safeSort,
+      sort_by: tmdbSort,
       page: safePage,
       include_adult: false,
     };
@@ -675,8 +709,28 @@ export const discoverMovies = async ({
     if (safeYear) {
       tmdbParams.primary_release_year = safeYear;
     }
+    if (safeYearMin) {
+      tmdbParams['primary_release_date.gte'] = `${safeYearMin}-01-01`;
+    }
+    if (safeYearMax) {
+      tmdbParams['primary_release_date.lte'] = `${safeYearMax}-12-31`;
+    }
+    if (safeLanguage) {
+      tmdbParams.with_original_language = safeLanguage;
+    }
+    if (safeMinRating) {
+      tmdbParams['vote_average.gte'] = safeMinRating;
+      tmdbParams['vote_count.gte'] = 20;
+    }
+    if (safeMinRuntime) {
+      tmdbParams['with_runtime.gte'] = safeMinRuntime;
+    }
+    if (safeMaxRuntime) {
+      tmdbParams['with_runtime.lte'] = safeMaxRuntime;
+    }
+
     if (indConfig) {
-      if (indConfig.tmdbFilters.with_original_language) {
+      if (indConfig.tmdbFilters.with_original_language && !safeLanguage) {
         tmdbParams.with_original_language = indConfig.tmdbFilters.with_original_language;
       }
       if (indConfig.tmdbFilters.with_origin_country) {
@@ -735,6 +789,41 @@ export const discoverMovies = async ({
     });
   }
 
+  if (safeYearMin) {
+    filtered = filtered.filter((m) => {
+      const y = m.release_year || parseInt(m.release_date) || 0;
+      return y >= safeYearMin;
+    });
+  }
+
+  if (safeYearMax) {
+    filtered = filtered.filter((m) => {
+      const y = m.release_year || parseInt(m.release_date) || 0;
+      return y <= safeYearMax;
+    });
+  }
+
+  if (safeLanguage) {
+    const targetLang = LANGUAGE_MAP[safeLanguage] || safeLanguage;
+    filtered = filtered.filter((m) => {
+      const ml = (m.language || '').toLowerCase();
+      const mol = (m.original_language || '').toLowerCase();
+      return ml.includes(targetLang) || mol === safeLanguage || ml === safeLanguage;
+    });
+  }
+
+  if (safeMinRating) {
+    filtered = filtered.filter((m) => (m.vote_average || 0) >= safeMinRating);
+  }
+
+  if (safeMinRuntime) {
+    filtered = filtered.filter((m) => (m.runtime || 120) >= safeMinRuntime);
+  }
+
+  if (safeMaxRuntime) {
+    filtered = filtered.filter((m) => (m.runtime || 120) <= safeMaxRuntime);
+  }
+
   // Apply Sort
   if (safeSort === 'vote_average.desc') {
     filtered.sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
@@ -746,6 +835,10 @@ export const discoverMovies = async ({
     filtered.sort((a, b) => new Date(a.release_date || 0) - new Date(b.release_date || 0));
   } else if (safeSort === 'popularity.asc') {
     filtered.sort((a, b) => (a.popularity || 0) - (b.popularity || 0));
+  } else if (safeSort === 'title.asc') {
+    filtered.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+  } else if (safeSort === 'title.desc') {
+    filtered.sort((a, b) => (b.title || '').localeCompare(a.title || ''));
   } else {
     filtered.sort((a, b) => (b.popularity || 0) - (a.popularity || 0));
   }
