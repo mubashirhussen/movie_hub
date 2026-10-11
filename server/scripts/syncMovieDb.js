@@ -104,7 +104,7 @@ export async function syncFromMovieDb() {
                 m.overview || '',
                 m.budget || 0,
                 m.revenue || 0,
-                m.trailer_key || 'NgBoMJy386M',
+                m.trailer_key || null,
                 JSON.stringify(m.stream_providers || ['Netflix', 'Amazon Prime Video']),
                 JSON.stringify(formattedCast)
               );
@@ -177,7 +177,7 @@ export async function syncFromMovieDb() {
                 m.overview || '',
                 0,
                 0,
-                'NgBoMJy386M',
+                m.trailer_key || null,
                 JSON.stringify(['Netflix', 'Amazon Prime Video']),
                 JSON.stringify([])
               );

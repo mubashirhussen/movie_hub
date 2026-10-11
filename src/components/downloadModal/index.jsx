@@ -11,7 +11,7 @@ const DownloadModal = ({ isOpen, onClose, movie }) => {
   if (!isOpen || !movie) return null;
 
   const title = movie.title || 'Movie';
-  const ytKey = movie.trailer_key || movie.youtube_full_movie_key || 'NgBoMJy386M';
+  const ytKey = movie.trailer_key || movie.youtube_full_movie_key || null;
 
   const downloadOptions = [
     {

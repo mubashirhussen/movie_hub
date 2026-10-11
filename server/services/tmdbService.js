@@ -320,9 +320,9 @@ const curatedYouTubeLibrary = {
   1003: { trailer: 'a2eK3dF9h0I', fullMovie: 'a2eK3dF9h0I', teasers: ['a2eK3dF9h0I'] },
   1004: { trailer: '1Zdl6L135V0', fullMovie: '1Zdl6L135V0', teasers: ['1Zdl6L135V0'] },
   1005: { trailer: 'G4f86Z7r0b8', fullMovie: 'G4f86Z7r0b8', teasers: ['G4f86Z7r0b8'] },
-  1006: { trailer: 'NgBoMJy386M', fullMovie: 'NgBoMJy386M', teasers: ['NgBoMJy386M'] },
+  1006: { trailer: '8P6U3F2xN4k', fullMovie: '8P6U3F2xN4k', teasers: ['8P6U3F2xN4k'] },
   1007: { trailer: 's8eK864F2wY', fullMovie: 's8eK864F2wY', teasers: ['s8eK864F2wY'] },
-  1008: { trailer: 'PKB_5rL7bLg', fullMovie: 'PKB_5rL7bLg', teasers: ['PKB_5rL7bLg'] },
+  1008: { trailer: 'NgBoMJy386M', fullMovie: 'NgBoMJy386M', teasers: ['NgBoMJy386M'] },
   1009: { trailer: 'k9r6p0Z9m0I', fullMovie: 'k9r6p0Z9m0I', teasers: ['k9r6p0Z9m0I'] },
   533535: { trailer: 'JfVOs4VSpmA', fullMovie: 'JfVOs4VSpmA', teasers: ['73_1biulkYk', 'JfVOs4VSpmA'] },
   27205: { trailer: 'YoHD9XEInc0', fullMovie: 'YoHD9XEInc0', teasers: ['YoHD9XEInc0'] },
@@ -332,6 +332,81 @@ const curatedYouTubeLibrary = {
   299534: { trailer: 'TcMBFSGVi1c', fullMovie: 'TcMBFSGVi1c', teasers: ['TcMBFSGVi1c'] },
   693134: { trailer: 'Way9Dexny3w', fullMovie: 'Way9Dexny3w', teasers: ['Way9Dexny3w'] },
   575264: { trailer: 'qEVUtrk8_B4', fullMovie: 'qEVUtrk8_B4', teasers: ['qEVUtrk8_B4'] },
+};
+
+// Strategic Trailer Selection Helper (Official Trailer > Official Teaser > Verified Trailer/Teaser)
+export const selectBestTrailer = (videos = [], preferredLang = 'en') => {
+  if (!Array.isArray(videos) || videos.length === 0) return null;
+
+  // Filter valid YouTube videos with strict key verification
+  const ytVideos = videos.filter(
+    (v) =>
+      v &&
+      v.site === 'YouTube' &&
+      v.key &&
+      typeof v.key === 'string' &&
+      /^[a-zA-Z0-9_-]{6,20}$/.test(v.key.trim())
+  );
+  if (ytVideos.length === 0) return null;
+
+  const pref = (preferredLang || 'en').toLowerCase().slice(0, 2);
+
+  // 1. Official Trailer in preferred language
+  const officialPrefTrailer = ytVideos.find(
+    (v) =>
+      v.type === 'Trailer' &&
+      v.official === true &&
+      (v.iso_639_1?.toLowerCase() === pref || v.iso_639_1?.toLowerCase() === preferredLang.toLowerCase())
+  );
+  if (officialPrefTrailer) return officialPrefTrailer;
+
+  // 2. Any Official Trailer across any language
+  const officialAnyTrailer = ytVideos.find(
+    (v) => v.type === 'Trailer' && v.official === true
+  );
+  if (officialAnyTrailer) return officialAnyTrailer;
+
+  // 3. Any Trailer in preferred language
+  const anyPrefTrailer = ytVideos.find(
+    (v) =>
+      v.type === 'Trailer' &&
+      (v.iso_639_1?.toLowerCase() === pref || v.iso_639_1?.toLowerCase() === preferredLang.toLowerCase())
+  );
+  if (anyPrefTrailer) return anyPrefTrailer;
+
+  // 4. Any Trailer in any language
+  const anyTrailer = ytVideos.find((v) => v.type === 'Trailer');
+  if (anyTrailer) return anyTrailer;
+
+  // 5. Official Teaser in preferred language
+  const officialPrefTeaser = ytVideos.find(
+    (v) =>
+      v.type === 'Teaser' &&
+      v.official === true &&
+      (v.iso_639_1?.toLowerCase() === pref || v.iso_639_1?.toLowerCase() === preferredLang.toLowerCase())
+  );
+  if (officialPrefTeaser) return officialPrefTeaser;
+
+  // 6. Any Official Teaser
+  const officialAnyTeaser = ytVideos.find(
+    (v) => v.type === 'Teaser' && v.official === true
+  );
+  if (officialAnyTeaser) return officialAnyTeaser;
+
+  // 7. Any Teaser
+  const anyTeaser = ytVideos.find((v) => v.type === 'Teaser');
+  if (anyTeaser) return anyTeaser;
+
+  // 8. Other clip ONLY if name includes 'trailer' or 'teaser'
+  const namedTrailer = ytVideos.find(
+    (v) =>
+      v.name &&
+      (v.name.toLowerCase().includes('trailer') ||
+        v.name.toLowerCase().includes('teaser'))
+  );
+  if (namedTrailer) return namedTrailer;
+
+  return null;
 };
 
 const getSeedPagination = (list, page = 1, limit = 12) => {
@@ -504,22 +579,21 @@ export const getMovieDetails = async (movieId) => {
 
     if (movieData) {
       const ytRef = curatedYouTubeLibrary[safeMovieId] || {};
-      const ytKey =
-        movieData.videos?.results?.find((v) => v.site === 'YouTube')?.key ||
-        ytRef.trailer ||
-        'NgBoMJy386M';
+      const allVideos = movieData.videos?.results || [];
+      const bestTrailer = selectBestTrailer(allVideos);
+      const ytKey = bestTrailer?.key || ytRef.trailer || null;
 
       const enriched = {
         ...movieData,
         trailer_key: ytKey,
         youtube_full_movie_key: ytRef.fullMovie || ytKey,
-        youtube_teasers: ytRef.teasers || [ytKey],
-        youtube_stream_url: `https://www.youtube.com/watch?v=${ytKey}`,
-        download_links: [
+        youtube_teasers: ytRef.teasers || (bestTrailer ? [bestTrailer.key] : []),
+        youtube_stream_url: ytKey ? `https://www.youtube.com/watch?v=${ytKey}` : null,
+        download_links: ytKey ? [
           { quality: '4K Ultra HD (2160p)', size: '4.8 GB', format: 'MP4 / H.265', url: `https://www.youtube.com/watch?v=${ytKey}` },
           { quality: 'Full HD (1080p)', size: '2.1 GB', format: 'MP4 / H.264', url: `https://www.youtube.com/watch?v=${ytKey}` },
           { quality: 'HD (720p)', size: '950 MB', format: 'MP4 / Fast', url: `https://www.youtube.com/watch?v=${ytKey}` },
-        ],
+        ] : [],
         applicationViews: 14850,
       };
 
@@ -536,7 +610,7 @@ export const getMovieDetails = async (movieId) => {
     }
 
     const ytRef = curatedYouTubeLibrary[safeMovieId] || curatedYouTubeLibrary[found.id] || {};
-    const ytKey = found.trailer_key || ytRef.trailer || 'NgBoMJy386M';
+    const ytKey = found.trailer_key || ytRef.trailer || null;
 
     const formattedDetail = {
       ...normalizeMovie(found),
@@ -569,13 +643,13 @@ export const getMovieDetails = async (movieId) => {
       status: 'Released',
       trailer_key: ytKey,
       youtube_full_movie_key: ytRef.fullMovie || ytKey,
-      youtube_teasers: ytRef.teasers || [ytKey],
-      youtube_stream_url: `https://www.youtube.com/watch?v=${ytKey}`,
-      download_links: [
+      youtube_teasers: ytRef.teasers || (ytKey ? [ytKey] : []),
+      youtube_stream_url: ytKey ? `https://www.youtube.com/watch?v=${ytKey}` : null,
+      download_links: ytKey ? [
         { quality: '4K Ultra HD (2160p)', size: '4.8 GB', format: 'MP4 / H.265', url: `https://www.youtube.com/watch?v=${ytKey}` },
         { quality: 'Full HD (1080p)', size: '2.1 GB', format: 'MP4 / H.264', url: `https://www.youtube.com/watch?v=${ytKey}` },
         { quality: 'HD (720p)', size: '950 MB', format: 'MP4 / Fast', url: `https://www.youtube.com/watch?v=${ytKey}` },
-      ],
+      ] : [],
       applicationViews: 14850,
     };
 
@@ -642,39 +716,71 @@ export const getMovieCredits = async (movieId) => {
   });
 };
 
-// 6. Trailers and Video Embeds
-export const getMovieVideos = async (movieId) => {
-  const safeMovieId = parseInt(movieId, 10);
-  const cacheKey = `videos_${safeMovieId}`;
+// 6. Trailers and Video Embeds (Supports Movie and TV Series)
+export const getMovieVideos = async (id, type = 'movie', language = 'en-US') => {
+  const safeId = parseInt(id, 10);
+  if (!safeId || isNaN(safeId)) return { id: safeId, results: [] };
+
+  const endpoint = type === 'tv' ? `/tv/${safeId}/videos` : `/movie/${safeId}/videos`;
+  const cacheKey = `videos_${type}_${safeId}_${language}`;
 
   return executeWithDeduplication(cacheKey, async () => {
-    try {
-      const response = await safeTmdbRequest(`/movie/${safeMovieId}/videos`, {
-        params: { api_key: TMDB_API_KEY, language: 'en-US' },
-      });
+    let videos = [];
 
-      if (response.data?.results?.length > 0) {
-        setInCache(cacheKey, response.data, CACHE_TTLS.DETAILS);
-        return response.data;
+    // 1. Query with requested language first
+    try {
+      const response = await safeTmdbRequest(endpoint, {
+        params: { api_key: TMDB_API_KEY, language },
+      });
+      if (Array.isArray(response.data?.results) && response.data.results.length > 0) {
+        videos = response.data.results;
       }
     } catch (error) {
-      console.warn(`TMDB videos fallback notice: ${sanitizeErrorMsg(error)}`);
+      // non-fatal, fallback to all languages
     }
 
-    const foundInSeed = seedMovies.find((m) => Number(m.id) === Number(safeMovieId));
-    const found = foundInSeed || discoveredMoviesMap.get(Number(safeMovieId)) || seedMovies[0];
-    const ytKey = found.trailer_key || curatedYouTubeLibrary[safeMovieId]?.trailer || 'NgBoMJy386M';
+    // 2. If no videos found in requested language, query without language filter
+    if (videos.length === 0) {
+      try {
+        const responseAll = await safeTmdbRequest(endpoint, {
+          params: { api_key: TMDB_API_KEY },
+        });
+        if (Array.isArray(responseAll.data?.results) && responseAll.data.results.length > 0) {
+          videos = responseAll.data.results;
+        }
+      } catch (error) {
+        console.warn(`TMDB videos fallback notice: ${sanitizeErrorMsg(error)}`);
+      }
+    }
 
-    const videosData = {
-      id: safeMovieId,
-      results: [
-        { id: 'v1', key: ytKey, site: 'YouTube', type: 'Trailer', name: `${found.title} Trailer` },
-        { id: 'v2', key: ytKey, site: 'YouTube', type: 'Teaser', name: `${found.title} Teaser Clip` },
-      ],
+    // 3. If still empty, check seedMovies or curated map ONLY for this specific ID (never borrow another movie!)
+    if (videos.length === 0) {
+      const seedMovie = seedMovies.find((m) => Number(m.id) === Number(safeId));
+      const curated = curatedYouTubeLibrary[safeId];
+      const verifiedKey = seedMovie?.trailer_key || curated?.trailer;
+
+      if (verifiedKey) {
+        videos = [
+          {
+            id: `verified-${safeId}`,
+            key: verifiedKey,
+            site: 'YouTube',
+            type: 'Trailer',
+            name: `${seedMovie?.title || 'Title'} Official Trailer`,
+            official: true,
+          },
+        ];
+      }
+    }
+
+    const payload = {
+      id: safeId,
+      media_type: type,
+      results: videos,
     };
 
-    setInCache(cacheKey, videosData, CACHE_TTLS.DETAILS);
-    return videosData;
+    setInCache(cacheKey, payload, CACHE_TTLS.DETAILS);
+    return payload;
   });
 };
 
@@ -1263,6 +1369,7 @@ export default {
   getMovieDetails,
   getMovieCredits,
   getMovieVideos,
+  selectBestTrailer,
   getWatchProviders,
   searchMovies,
   getSimilarMovies,

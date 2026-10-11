@@ -69,7 +69,7 @@ const TrailerModal = ({ isOpen, onClose, videoKey, title = 'Movie Trailer' }) =>
           ) : (
             <div className="trailer-unavailable-box">
               <AlertCircle size={36} color="#f87171" />
-              <p>Official trailer is currently unavailable for this title.</p>
+              <p>Trailer unavailable for this title.</p>
             </div>
           )}
         </div>

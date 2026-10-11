@@ -25,7 +25,13 @@ const HeroSection = ({ movie }) => {
   const rating = formatRating(movie.vote_average);
   const year = formatYear(movie.release_date);
 
+  React.useEffect(() => {
+    setTrailerKey(movie.trailer_key || null);
+  }, [movieId]);
+
   const handleOpenTrailer = async () => {
+    if (!movieId) return;
+
     if (trailerKey) {
       setTrailerOpen(true);
       return;
@@ -36,12 +42,14 @@ const HeroSection = ({ movie }) => {
       const data = await movieService.getMovieTrailer(movieId);
       if (data?.trailer?.key) {
         setTrailerKey(data.trailer.key);
+      } else if (movie.trailer_key) {
+        setTrailerKey(movie.trailer_key);
       } else {
-        setTrailerKey('NgBoMJy386M'); // default official preview
+        setTrailerKey(null);
       }
       setTrailerOpen(true);
     } catch {
-      setTrailerKey('NgBoMJy386M');
+      setTrailerKey(movie.trailer_key || null);
       setTrailerOpen(true);
     } finally {
       setLoadingTrailer(false);

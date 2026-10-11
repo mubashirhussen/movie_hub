@@ -136,17 +136,20 @@ export const getMovieTrailer = async (req, res, next) => {
         message: 'Invalid movie ID provided',
       });
     }
-    const videos = await tmdbService.getMovieVideos(movieId);
 
-    const trailer =
-      videos.results?.find(
-        (v) => v.site === 'YouTube' && (v.type === 'Trailer' || v.type === 'Teaser')
-      ) || videos.results?.[0] || null;
+    const type = req.query.type === 'tv' ? 'tv' : 'movie';
+    const language = req.query.language || 'en-US';
+    const videos = await tmdbService.getMovieVideos(movieId, type, language);
+
+    const trailer = tmdbService.selectBestTrailer(videos.results, language);
 
     return res.status(200).json({
       success: true,
       data: {
+        movieId,
+        type,
         trailer,
+        hasTrailer: Boolean(trailer?.key),
         allVideos: videos.results || [],
       },
     });

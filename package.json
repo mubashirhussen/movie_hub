@@ -33,6 +33,7 @@
     "test:watchlist": "node test_stage11_discovery_watchlist.js",
     "test:stage12": "node test_stage12_data_quality_caching.js",
     "test:caching": "node test_stage12_data_quality_caching.js",
+    "test:trailers": "node test_trailer_bugfix_verification.js",
     "test:ci": "node run_all_tests.js",
     "audit": "npm audit --audit-level=high"
   },

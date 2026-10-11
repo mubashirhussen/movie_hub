@@ -50,7 +50,11 @@ export const getMovieCast = async (movieId, options = {}) => {
 };
 
 export const getMovieTrailer = async (movieId, options = {}) => {
-  const response = await api.get(`/movies/${movieId}/trailer`, options);
+  const { type = 'movie', language = 'en-US', ...rest } = options;
+  const response = await api.get(`/movies/${movieId}/trailer`, {
+    params: { type, language },
+    ...rest,
+  });
   const payload = response.data?.data ?? response.data;
   return payload;
 };

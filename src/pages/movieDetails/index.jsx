@@ -65,6 +65,8 @@ const MovieDetails = () => {
 
     setLoading(true);
     setError(null);
+    setTrailerKey(null);
+    setActivePlayerKey(null);
     window.scrollTo({ top: 0, behavior: 'instant' });
 
     try {
@@ -84,9 +86,10 @@ const MovieDetails = () => {
       }
 
       // 2. Fetch credits, trailer, providers, similar, and recommendations in parallel
+      const contentType = movieData.media_type || (movieData.first_air_date ? 'tv' : 'movie');
       const [creditsData, trailerData, providersData, similarData, recsData] = await Promise.allSettled([
         movieService.getMovieCast(movieId),
-        movieService.getMovieTrailer(movieId),
+        movieService.getMovieTrailer(movieId, { type: contentType }),
         movieService.getMovieProviders(movieId, selectedRegion),
         movieService.getSimilarMovies(movieId, 1),
         movieService.getMovieRecommendations(movieId, 1),
@@ -98,14 +101,17 @@ const MovieDetails = () => {
         setCredits({ cast: [], crew: [] });
       }
 
-      const tKey =
-        (trailerData.status === 'fulfilled' && trailerData.value?.trailer?.key) ||
-        movieData.trailer_key ||
-        movieData.youtube_full_movie_key ||
-        'NgBoMJy386M';
+      // Read verified trailer key for THIS movie only - NEVER fallback to RRR
+      let resolvedTrailerKey = null;
+      if (trailerData.status === 'fulfilled') {
+        resolvedTrailerKey = trailerData.value?.trailer?.key || trailerData.value?.key || null;
+      }
+      if (!resolvedTrailerKey && movieData.trailer_key) {
+        resolvedTrailerKey = movieData.trailer_key;
+      }
 
-      setTrailerKey(tKey);
-      setActivePlayerKey(tKey);
+      setTrailerKey(resolvedTrailerKey);
+      setActivePlayerKey(resolvedTrailerKey);
 
       if (providersData.status === 'fulfilled') {
         setProviders(providersData.value);
@@ -138,6 +144,13 @@ const MovieDetails = () => {
   };
 
   useEffect(() => {
+    setMovie(null);
+    setCredits({ cast: [], crew: [] });
+    setTrailerKey(null);
+    setActivePlayerKey(null);
+    setProviders(null);
+    setSimilarMovies([]);
+    setRecommendations([]);
     fetchMovieDetails();
   }, [movieId]);
 
@@ -405,6 +418,7 @@ const MovieDetails = () => {
           <div className="in-page-player-frame">
             {activePlayerKey ? (
               <iframe
+                key={`player-${activePlayerKey}`}
                 src={`https://www.youtube-nocookie.com/embed/${activePlayerKey}?autoplay=0&rel=0&modestbranding=1`}
                 title={`${movie.title} Stream Player`}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -414,7 +428,7 @@ const MovieDetails = () => {
             ) : (
               <div className="player-offline-box">
                 <Film size={48} color="#94a3b8" />
-                <p>High definition video stream is ready.</p>
+                <p>Trailer unavailable for this title.</p>
               </div>
             )}
           </div>
@@ -558,10 +572,11 @@ const MovieDetails = () => {
       {/* Centered Trailer Modal */}
       {trailerOpen && (
         <TrailerModal
+          key={`trailer-${movie?.id || movieId}`}
           isOpen={trailerOpen}
           onClose={() => setTrailerOpen(false)}
           videoKey={trailerKey}
-          title={movie.title}
+          title={movie?.title || 'Movie'}
         />
       )}
 

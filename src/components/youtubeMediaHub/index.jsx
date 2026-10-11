@@ -5,51 +5,57 @@ import './index.css';
 const YouTubeMediaHub = ({ movie, onSelectVideo }) => {
   if (!movie) return null;
 
-  const ytKey = movie.trailer_key || movie.youtube_full_movie_key || 'NgBoMJy386M';
+  const ytKey = movie.trailer_key || movie.youtube_full_movie_key || null;
   const title = movie.title || 'Movie';
 
-  // Build list of YouTube media items
+  if (!ytKey) {
+    return (
+      <section className="youtube-media-hub-section animate-fade-in">
+        <div className="hub-section-header">
+          <div className="hub-header-left">
+            <div className="youtube-badge-icon">
+              <Film size={20} />
+            </div>
+            <div>
+              <h3 className="hub-heading">Official Videos & Media Hub</h3>
+              <p className="hub-subheading">High-definition trailers, official teasers and promo clips</p>
+            </div>
+          </div>
+        </div>
+        <div className="player-offline-box" style={{ padding: '2.5rem', textAlign: 'center', background: 'rgba(15, 23, 42, 0.6)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <Film size={36} color="#94a3b8" style={{ marginBottom: '0.75rem' }} />
+          <p style={{ color: '#94a3b8', margin: 0, fontSize: '0.95rem' }}>Trailer unavailable for this title.</p>
+        </div>
+      </section>
+    );
+  }
+
+  // Build list of verified YouTube media items for this title
   const mediaList = [
     {
       id: 'main-trailer',
       type: 'Official Trailer',
       title: `${title} - Official Main Trailer`,
       key: ytKey,
-      thumbnail: `https://img.youtube.com/vi/${ytKey}/maxresdefault.jpg`,
-      fallbackThumb: `https://img.youtube.com/vi/${ytKey}/hqdefault.jpg`,
+      thumbnail: `https://img.youtube.com/vi/${ytKey}/hqdefault.jpg`,
+      fallbackThumb: `https://img.youtube.com/vi/${ytKey}/mqdefault.jpg`,
       duration: '2:45',
       badge: 'TRAILER',
     },
-    {
-      id: 'teaser-1',
-      type: 'Official Teaser',
-      title: `${title} - First Look & Title Teaser`,
-      key: (movie.youtube_teasers && movie.youtube_teasers[0]) || ytKey,
-      thumbnail: `https://img.youtube.com/vi/${(movie.youtube_teasers && movie.youtube_teasers[0]) || ytKey}/maxresdefault.jpg`,
-      fallbackThumb: `https://img.youtube.com/vi/${(movie.youtube_teasers && movie.youtube_teasers[0]) || ytKey}/hqdefault.jpg`,
-      duration: '1:30',
-      badge: 'TEASER',
-    },
-    {
-      id: 'full-stream',
-      type: 'Full Movie Stream Link',
-      title: `${title} - Full Movie HD Stream Reference`,
-      key: movie.youtube_full_movie_key || ytKey,
-      thumbnail: `https://img.youtube.com/vi/${movie.youtube_full_movie_key || ytKey}/maxresdefault.jpg`,
-      fallbackThumb: `https://img.youtube.com/vi/${movie.youtube_full_movie_key || ytKey}/hqdefault.jpg`,
-      duration: `${movie.runtime || 150}m`,
-      badge: 'FULL MOVIE',
-    },
-    {
-      id: 'promo-clip',
-      type: 'Sneak Peek Promo',
-      title: `${title} - High Octane Action Scene & Making`,
-      key: ytKey,
-      thumbnail: `https://img.youtube.com/vi/${ytKey}/hqdefault.jpg`,
-      fallbackThumb: `https://img.youtube.com/vi/${ytKey}/mqdefault.jpg`,
-      duration: '3:15',
-      badge: 'PROMO',
-    }
+    ...(Array.isArray(movie.youtube_teasers) && movie.youtube_teasers[0] && movie.youtube_teasers[0] !== ytKey
+      ? [
+          {
+            id: 'teaser-1',
+            type: 'Official Teaser',
+            title: `${title} - First Look & Title Teaser`,
+            key: movie.youtube_teasers[0],
+            thumbnail: `https://img.youtube.com/vi/${movie.youtube_teasers[0]}/hqdefault.jpg`,
+            fallbackThumb: `https://img.youtube.com/vi/${movie.youtube_teasers[0]}/mqdefault.jpg`,
+            duration: '1:30',
+            badge: 'TEASER',
+          },
+        ]
+      : []),
   ];
 
   return (

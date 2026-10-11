@@ -15,6 +15,7 @@ const suites = [
   { name: 'Stage 10: Ratings, Reviews & Community', file: 'test_stage10_community.js' },
   { name: 'Stage 11: Advanced Discovery & Smart Watchlists', file: 'test_stage11_discovery_watchlist.js' },
   { name: 'Stage 12: Movie Data Quality & Caching', file: 'test_stage12_data_quality_caching.js' },
+  { name: 'Trailers: Correct Movie Trailer Verification', file: 'test_trailer_bugfix_verification.js' },
 ];
 
 console.log('====================================================');
