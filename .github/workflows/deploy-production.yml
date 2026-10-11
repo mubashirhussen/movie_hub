@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Release Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Verify Release Ref & Lockfile
         run: |
@@ -39,7 +39,7 @@ jobs:
 
     steps:
       - name: Checkout Release Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Trigger Production Deployment via Webhook
         env:
