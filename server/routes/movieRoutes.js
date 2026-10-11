@@ -15,6 +15,8 @@ import {
   getMovieRecommendations,
   incrementMovieView,
   getByIndustry,
+  getCacheStats,
+  clearCache,
 } from '../controllers/movieController.js';
 
 import {
@@ -39,6 +41,8 @@ router.get('/discover', discover);
 router.get('/search', search);
 router.get('/category/:industry', getByIndustry);
 router.get('/industry/:industry', getByIndustry);
+router.get('/cache/stats', getCacheStats);
+router.post('/cache/clear', clearCache);
 router.get('/:id', getMovieDetails);
 router.get('/:id/cast', getMovieCast);
 router.get('/:id/credits', getMovieCast);

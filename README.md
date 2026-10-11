@@ -247,7 +247,7 @@ VITE_API_BASE_URL=/api
 
 ## 13. Testing Instructions
 CineVerse includes a self-bootstrapping master regression runner covering all development phases and production stages:
-- **Run Master Regression Test Suite (All 13 Suites)**:
+- **Run Master Regression Test Suite (All 14 Suites)**:
   ```bash
   npm test
   ```
@@ -261,6 +261,7 @@ CineVerse includes a self-bootstrapping master regression runner covering all de
   npm run test:stage8    # Stage 8: Final acceptance test suite
   npm run test:stage10   # Stage 10: Ratings, reviews & community suite
   npm run test:stage11   # Stage 11: Advanced discovery & smart watchlists
+  npm run test:stage12   # Stage 12: Movie data quality & caching suite
   ```
 - **Run Dependency Security Audit**:
   ```bash
@@ -297,8 +298,24 @@ CineVerse includes a self-bootstrapping master regression runner covering all de
 
 ---
 
-## 17. Future Improvements (Stage 9 Roadmap)
+## 17. Future Improvements (Roadmap)
 - Personalized machine learning recommendation engine based on user watch history and rating vectors.
-- User reviews, star ratings, and community discussion threads.
-- Filter by specific streaming subscription providers (e.g. "Only show movies available on Netflix").
 - Social profiles and shareable custom watchlists.
+
+---
+
+## 18. Stage 12: Movie Data Quality, API Reliability & Caching
+Stage 12 hardens external movie data processing, upstream TMDB communications, and frontend interaction efficiency:
+- **Centralized Backend TMDB Service**: Keeps credentials strictly server-side, standardizes request timeouts (4000ms), and scrubs API keys from error outputs and client responses.
+- **Differentiated Variable TTL Caching**: High-efficiency in-memory cache with capacity limits (1500 items max) and LRU eviction:
+  - Genres: 24 hours
+  - Details, Cast, Trailers: 12 hours
+  - Streaming Providers: 6 hours
+  - Discovery Catalog: 30 minutes
+  - Multi-Filter Discover Queries: 15 minutes
+  - Keyword Search Queries: 10 minutes
+- **In-Flight Request Deduplication**: Reuses active in-flight promises so concurrent requests for identical data result in only 1 upstream call.
+- **Circuit Breaker Rate Limiting**: Intercepts TMDB HTTP 429 Too Many Requests, respects `Retry-After` headers, and automatically switches to resilient catalog fallback during rate-limit cooldown windows.
+- **Frontend Stale Request Cancellation**: Search bar incorporates `AbortController` cancellation to eliminate race conditions and avoid out-of-order rendering on rapid keystrokes.
+- **Operational Metrics**: Real-time endpoints at `GET /api/movies/cache/stats` and `POST /api/movies/cache/clear`.
+

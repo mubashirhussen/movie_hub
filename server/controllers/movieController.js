@@ -347,6 +347,24 @@ export const discover = async (req, res, next) => {
   }
 };
 
+// 15. Operational Cache Health & Statistics
+export const getCacheStats = (req, res) => {
+  const stats = tmdbService.getCacheStats();
+  return res.status(200).json({
+    success: true,
+    data: stats,
+  });
+};
+
+// 16. Operational Cache Invalidation
+export const clearCache = (req, res) => {
+  tmdbService.clearCache();
+  return res.status(200).json({
+    success: true,
+    message: 'TMDB movie cache flushed successfully',
+  });
+};
+
 export default {
   getPopular,
   getTopRated,
@@ -362,4 +380,6 @@ export default {
   getSimilarMovies,
   incrementMovieView,
   getByIndustry,
+  getCacheStats,
+  clearCache,
 };

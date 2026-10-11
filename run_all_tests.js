@@ -14,6 +14,7 @@ const suites = [
   { name: 'Stage 8: Final Acceptance & Handover Verification', file: 'test_stage8_final_acceptance.js' },
   { name: 'Stage 10: Ratings, Reviews & Community', file: 'test_stage10_community.js' },
   { name: 'Stage 11: Advanced Discovery & Smart Watchlists', file: 'test_stage11_discovery_watchlist.js' },
+  { name: 'Stage 12: Movie Data Quality & Caching', file: 'test_stage12_data_quality_caching.js' },
 ];
 
 console.log('====================================================');
@@ -23,7 +24,7 @@ console.log('====================================================\n');
 let serverProcess = null;
 
 async function ensureServerRunning() {
-  const baseUrl = process.env.API_URL || 'http://localhost:5000/api';
+  const baseUrl = process.env.API_URL || 'http://127.0.0.1:5000/api';
   const healthUrl = `${baseUrl.replace(/\/+$/, '')}/health`;
 
   try {

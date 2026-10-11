@@ -21,6 +21,7 @@ const SearchBar = ({ onSearchComplete }) => {
   // Fetch quick suggestions when user pauses typing
   useEffect(() => {
     let isMounted = true;
+    const abortController = new AbortController();
 
     const fetchSuggestions = async () => {
       if (!debouncedQuery || debouncedQuery.trim().length < 2) {
@@ -33,8 +34,8 @@ const SearchBar = ({ onSearchComplete }) => {
       setIsLoading(true);
       try {
         const [movieData, peopleData] = await Promise.allSettled([
-          movieService.searchMovies(debouncedQuery.trim(), 1),
-          movieService.searchPeople(debouncedQuery.trim(), 1),
+          movieService.searchMovies(debouncedQuery.trim(), 1, { signal: abortController.signal }),
+          movieService.searchPeople(debouncedQuery.trim(), 1, { signal: abortController.signal }),
         ]);
 
         if (isMounted) {
@@ -46,7 +47,8 @@ const SearchBar = ({ onSearchComplete }) => {
           setIsOpen(movies.length > 0 || people.length > 0);
           setSelectedIndex(-1);
         }
-      } catch {
+      } catch (err) {
+        if (err.name === 'AbortError' || err.name === 'CanceledError') return;
         if (isMounted) {
           setSuggestions([]);
           setActorSuggestions([]);
@@ -59,6 +61,7 @@ const SearchBar = ({ onSearchComplete }) => {
     fetchSuggestions();
     return () => {
       isMounted = false;
+      abortController.abort();
     };
   }, [debouncedQuery]);
 

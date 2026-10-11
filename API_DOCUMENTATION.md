@@ -539,3 +539,69 @@ The CineVerse backend exposes a RESTful JSON API organized around resource contr
 - **Validation**: `reason` must be one of: `harassment`, `spam`, `hate_speech`, `unmarked_spoiler`, `other`.
 - **Response (201 Created)**: Report recorded; duplicate reports from the same user rejected with 409 Conflict.
 
+---
+
+## 7. Movie Data Quality, External API Reliability & Caching (`/api/movies/cache`)
+
+Stage 12 introduces centralized external TMDB access, in-memory caching with differentiated TTLs, in-flight request deduplication, circuit breaking for HTTP 429 rate limits, and safe movie metadata normalization.
+
+### `GET /api/movies/cache/stats`
+- **Purpose**: Operational metrics for cache health, hit rate, memory consumption, deduplication, and circuit breaker status.
+- **Auth**: None
+- **Response (200 OK)**:
+```json
+{
+  "success": true,
+  "data": {
+    "size": 18,
+    "maxSize": 1500,
+    "hits": 142,
+    "misses": 24,
+    "hitRatePercentage": 85.54,
+    "sets": 24,
+    "evictions": 0,
+    "dedupedRequests": 12,
+    "activeInFlightRequests": 0,
+    "circuitBreakerActive": false,
+    "cooldownRemainingSeconds": 0,
+    "ttls": {
+      "GENRES": 86400000,
+      "DETAILS": 43200000,
+      "PROVIDERS": 21600000,
+      "CATALOG": 1800000,
+      "DISCOVERY": 900000,
+      "SEARCH": 600000
+    }
+  }
+}
+```
+
+### `POST /api/movies/cache/clear`
+- **Purpose**: Operational flush of all cached entries and in-flight tracking tables.
+- **Auth**: None (or Admin in production)
+- **Response (200 OK)**:
+```json
+{
+  "success": true,
+  "message": "Movie cache and in-flight tracking flushed successfully",
+  "timestamp": "2026-10-11T12:00:00.000Z"
+}
+```
+
+### TTL & Cache Policy Reference
+| Data Category | Endpoint / Operations | TTL | Description |
+| :--- | :--- | :--- | :--- |
+| **GENRES** | `/api/movies/genres` | 24 Hours | Static taxonomy; rarely changes |
+| **DETAILS** | `/api/movies/:id`, `:id/cast`, `:id/trailer` | 12 Hours | Movie metadata, cast lists, trailers |
+| **PROVIDERS** | `/api/movies/:id/providers` | 6 Hours | Streaming provider links |
+| **CATALOG** | `/popular`, `/top-rated`, `/upcoming`, `/industry/*` | 30 Minutes | High-traffic discovery feeds |
+| **DISCOVERY** | `/api/movies/discover` | 15 Minutes | Complex multi-filter queries |
+| **SEARCH** | `/api/movies/search` | 10 Minutes | Text keyword queries |
+
+### Reliability & Resiliency Features
+1. **In-Flight Request Deduplication**: If multiple concurrent requests arrive for the exact same un-cached resource, only one upstream request is dispatched to TMDB while pending promises are shared.
+2. **Circuit Breaker Cooldown**: Detects HTTP 429 Too Many Requests responses from TMDB, extracts `Retry-After` headers (or defaults to a 60-second cooldown), and activates fallback catalog mode to prevent retry storms.
+3. **API Credential Sanitization**: Prevents leakage of `api_key` query parameters or authentication headers in logs and error responses.
+4. **Data Normalization**: Validates movie IDs as positive integers, trims string metadata, standardizes vote averages to 1 decimal place, bidirectionally maps genres and genre IDs, and provides local SVG fallback placeholders for missing posters and backdrops.
+
+
