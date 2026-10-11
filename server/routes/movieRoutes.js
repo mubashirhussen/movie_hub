@@ -49,6 +49,7 @@ router.get('/:id/credits', getMovieCast);
 router.get('/:id/trailer', getMovieTrailer);
 router.get('/:id/videos', getMovieTrailer);
 router.get('/:id/providers', getMovieProviders);
+router.get('/:id/watch-options', getMovieProviders);
 router.get('/:id/similar', getSimilarMovies);
 router.get('/:id/recommendations', getMovieRecommendations);
 router.post('/:id/view', incrementMovieView);

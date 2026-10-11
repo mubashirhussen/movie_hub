@@ -409,7 +409,7 @@ export const selectBestTrailer = (videos = [], preferredLang = 'en') => {
   return null;
 };
 
-// Process, sanitize, sort, and group YouTube videos by type
+// Process, sanitize, sort, and group YouTube videos by type with official source verification
 export const processAndGroupVideos = (rawVideos = [], preferredLang = 'en') => {
   if (!Array.isArray(rawVideos) || rawVideos.length === 0) {
     return {
@@ -417,16 +417,31 @@ export const processAndGroupVideos = (rawVideos = [], preferredLang = 'en') => {
       grouped: {
         trailers: [],
         teasers: [],
+        finalTrailers: [],
+        announcements: [],
         clips: [],
         featurettes: [],
         behindTheScenes: [],
+        all: [],
       },
     };
   }
 
   const pref = (preferredLang || 'en').toLowerCase().slice(0, 2);
 
-  // Filter YouTube videos with valid keys
+  const isFanOrParody = (name = '') => {
+    const l = name.toLowerCase();
+    return (
+      l.includes('fan made') ||
+      l.includes('fan-made') ||
+      l.includes('concept') ||
+      l.includes('parody') ||
+      l.includes('reaction') ||
+      l.includes('mashup')
+    );
+  };
+
+  // Filter YouTube videos with valid keys, excluding fan-made content
   const ytVideos = rawVideos
     .filter(
       (v) =>
@@ -434,22 +449,50 @@ export const processAndGroupVideos = (rawVideos = [], preferredLang = 'en') => {
         v.site === 'YouTube' &&
         v.key &&
         typeof v.key === 'string' &&
-        /^[a-zA-Z0-9_-]{6,20}$/.test(v.key.trim())
+        /^[a-zA-Z0-9_-]{6,20}$/.test(v.key.trim()) &&
+        !isFanOrParody(v.name || '')
     )
-    .map((v) => ({
-      id: v.id || v.key,
-      key: v.key.trim(),
-      name: (v.name || 'Video').trim(),
-      type: v.type || 'Other',
-      site: 'YouTube',
-      language: v.iso_639_1 || 'en',
-      region: v.iso_3166_1 || '',
-      official: Boolean(v.official),
-      publishedAt: v.published_at || null,
-      embedUrl: `https://www.youtube-nocookie.com/embed/${v.key.trim()}?autoplay=0&rel=0&modestbranding=1`,
-    }));
+    .map((v) => {
+      const name = (v.name || 'Video').trim();
+      const lowerName = name.toLowerCase();
+      const isOfficialFlag = Boolean(v.official);
+      const hasOfficialKeyword =
+        lowerName.includes('official') ||
+        lowerName.includes('theatrical') ||
+        lowerName.includes('final trailer') ||
+        lowerName.includes('main trailer');
 
-  // Sort: official first, then matching preferred language, then newest published date
+      let verificationStatus = 'associated';
+      let verificationBadge = 'Associated Promo';
+
+      if (isOfficialFlag && hasOfficialKeyword) {
+        verificationStatus = 'verified';
+        verificationBadge = 'Verified Studio Master';
+      } else if (isOfficialFlag) {
+        verificationStatus = 'verified';
+        verificationBadge = 'Verified Official';
+      } else if (hasOfficialKeyword) {
+        verificationStatus = 'verified';
+        verificationBadge = 'Official Promotional';
+      }
+
+      return {
+        id: v.id || v.key,
+        key: v.key.trim(),
+        name,
+        type: v.type || 'Other',
+        site: 'YouTube',
+        language: v.iso_639_1 || 'en',
+        region: v.iso_3166_1 || '',
+        official: isOfficialFlag || verificationStatus === 'verified',
+        verificationStatus,
+        verificationBadge,
+        publishedAt: v.published_at || null,
+        embedUrl: `https://www.youtube-nocookie.com/embed/${v.key.trim()}?autoplay=0&rel=0&modestbranding=1`,
+      };
+    });
+
+  // Sort: verified official first, then matching preferred language, then newest published date
   ytVideos.sort((a, b) => {
     if (a.official !== b.official) {
       return a.official ? -1 : 1;
@@ -467,9 +510,19 @@ export const processAndGroupVideos = (rawVideos = [], preferredLang = 'en') => {
   const grouped = {
     trailers: ytVideos.filter((v) => v.type === 'Trailer'),
     teasers: ytVideos.filter((v) => v.type === 'Teaser'),
+    finalTrailers: ytVideos.filter(
+      (v) => v.type === 'Trailer' && v.name.toLowerCase().includes('final')
+    ),
+    announcements: ytVideos.filter(
+      (v) =>
+        v.name.toLowerCase().includes('announcement') ||
+        v.name.toLowerCase().includes('first look') ||
+        v.name.toLowerCase().includes('title reveal')
+    ),
     clips: ytVideos.filter((v) => v.type === 'Clip'),
     featurettes: ytVideos.filter((v) => v.type === 'Featurette'),
     behindTheScenes: ytVideos.filter((v) => v.type === 'Behind the Scenes'),
+    all: ytVideos,
   };
 
   return {
@@ -931,6 +984,15 @@ export const getWatchProviders = async (id, requestedRegion = 'IN', type = 'movi
         totalOptions,
         attribution: 'Streaming data powered by JustWatch via TMDB.',
         qualityNote: 'Quality varies by plan; check the platform.',
+        qualityInfo: {
+          note: 'Quality varies by subscription plan; check the platform.',
+          supportedTiers: ['SD', 'HD (720p)', 'Full HD (1080p)', '4K Ultra HD (Plan-dependent)'],
+        },
+        offlineGuidance: {
+          note: 'Full movies cannot be exported as MP4 files through CineVerse. Use the official apps of licensed streaming providers (e.g. Netflix, Prime Video, Disney+ Hotstar mobile apps) for legal offline downloads.',
+          supportsAppOfflineDownload: true,
+        },
+        lastCheckedAt: new Date().toISOString(),
         availableRegions: Object.keys(results),
       };
 
@@ -953,6 +1015,15 @@ export const getWatchProviders = async (id, requestedRegion = 'IN', type = 'movi
       totalOptions: 0,
       attribution: 'Streaming data powered by JustWatch via TMDB.',
       qualityNote: 'Quality varies by plan; check the platform.',
+      qualityInfo: {
+        note: 'Quality varies by subscription plan; check the platform.',
+        supportedTiers: ['SD', 'HD (720p)', 'Full HD (1080p)', '4K Ultra HD (Plan-dependent)'],
+      },
+      offlineGuidance: {
+        note: 'Full movies cannot be exported as MP4 files through CineVerse. Use the official apps of licensed streaming providers for legal offline downloads.',
+        supportsAppOfflineDownload: true,
+      },
+      lastCheckedAt: new Date().toISOString(),
       availableRegions: ['IN', 'US', 'GB'],
     };
 

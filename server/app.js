@@ -69,6 +69,7 @@ app.get('/api/ready', (req, res) => {
 // API Routes with dedicated auth rate limiter
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/movies', movieRoutes);
+app.use('/api/tv', movieRoutes);
 app.use('/api/people', peopleRoutes);
 app.use('/api/watchlist', watchlistRoutes);
 app.use('/api/watchlists', watchlistRoutes);

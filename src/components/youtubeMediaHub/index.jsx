@@ -18,6 +18,8 @@ const YouTubeMediaHub = ({
   const rawGrouped = trailerVideos?.grouped || {};
   const trailers = Array.isArray(rawGrouped.trailers) ? rawGrouped.trailers : [];
   const teasers = Array.isArray(rawGrouped.teasers) ? rawGrouped.teasers : [];
+  const finalTrailers = Array.isArray(rawGrouped.finalTrailers) ? rawGrouped.finalTrailers : [];
+  const announcements = Array.isArray(rawGrouped.announcements) ? rawGrouped.announcements : [];
   const clips = Array.isArray(rawGrouped.clips) ? rawGrouped.clips : [];
   const featurettes = Array.isArray(rawGrouped.featurettes) ? rawGrouped.featurettes : [];
   const behindTheScenes = Array.isArray(rawGrouped.behindTheScenes) ? rawGrouped.behindTheScenes : [];
@@ -35,6 +37,8 @@ const YouTubeMediaHub = ({
         name: `${title} - Official Trailer`,
         type: 'Trailer',
         official: true,
+        verificationStatus: 'verified',
+        verificationBadge: 'Verified Official',
         site: 'YouTube',
       },
     ];
@@ -82,6 +86,19 @@ const YouTubeMediaHub = ({
         return trailers.length > 0 ? trailers : allVideos.filter((v) => v.type === 'Trailer');
       case 'teasers':
         return teasers.length > 0 ? teasers : allVideos.filter((v) => v.type === 'Teaser');
+      case 'finalTrailers':
+        return finalTrailers.length > 0
+          ? finalTrailers
+          : allVideos.filter((v) => v.type === 'Trailer' && v.name.toLowerCase().includes('final'));
+      case 'announcements':
+        return announcements.length > 0
+          ? announcements
+          : allVideos.filter(
+              (v) =>
+                v.name.toLowerCase().includes('announcement') ||
+                v.name.toLowerCase().includes('first look') ||
+                v.name.toLowerCase().includes('title reveal')
+            );
       case 'clips':
         return clips.length > 0 ? clips : allVideos.filter((v) => v.type === 'Clip');
       case 'behindTheScenes':
@@ -175,6 +192,28 @@ const YouTubeMediaHub = ({
             aria-selected={activeTab === 'teasers'}
           >
             Teasers ({teasers.length})
+          </button>
+        )}
+        {finalTrailers.length > 0 && (
+          <button
+            type="button"
+            className={`btn-hub-tab ${activeTab === 'finalTrailers' ? 'active' : ''}`}
+            onClick={() => setActiveTab('finalTrailers')}
+            role="tab"
+            aria-selected={activeTab === 'finalTrailers'}
+          >
+            Final Trailers ({finalTrailers.length})
+          </button>
+        )}
+        {announcements.length > 0 && (
+          <button
+            type="button"
+            className={`btn-hub-tab ${activeTab === 'announcements' ? 'active' : ''}`}
+            onClick={() => setActiveTab('announcements')}
+            role="tab"
+            aria-selected={activeTab === 'announcements'}
+          >
+            Announcements ({announcements.length})
           </button>
         )}
         {clips.length > 0 && (

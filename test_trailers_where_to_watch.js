@@ -158,6 +158,48 @@ async function runTests() {
     assert(false, `Zero-providers test failed: ${err.message}`);
   }
 
+  // TEST 9: Dedicated TV route /api/tv/:id/videos
+  try {
+    console.log('\n[TEST 9] Dedicated TV endpoint: /api/tv/1396/videos');
+    const res = await axios.get(`${BASE_URL}/tv/1396/videos`);
+    assert(res.status === 200, 'Direct TV route returned 200');
+    assert(res.data.success === true, 'Direct TV route marked success');
+    const data = res.data.data;
+    assert(data.type === 'tv', 'Identified type as tv automatically from route');
+    assert(data.allVideos.length > 0, 'Returned videos for Breaking Bad');
+    assert(
+      ['verified', 'associated'].includes(data.allVideos[0].verificationStatus),
+      'Video classified with valid verificationStatus (verified or associated)'
+    );
+  } catch (err) {
+    assert(false, `Dedicated TV route test failed: ${err.message}`);
+  }
+
+  // TEST 10: Watch options alias: /api/movies/:id/watch-options
+  try {
+    console.log('\n[TEST 10] Watch options alias: /api/movies/256040/watch-options');
+    const res = await axios.get(`${BASE_URL}/movies/256040/watch-options?region=IN`);
+    assert(res.status === 200, 'Watch-options alias returned 200');
+    const data = res.data.data;
+    assert(data.totalOptions > 0, 'Found providers via watch-options alias');
+    assert(Boolean(data.qualityInfo), 'Returns qualityInfo metadata');
+    assert(Boolean(data.offlineGuidance), 'Returns offlineGuidance metadata');
+  } catch (err) {
+    assert(false, `Watch options alias test failed: ${err.message}`);
+  }
+
+  // TEST 11: TV Watch options alias: /api/tv/:id/watch-options
+  try {
+    console.log('\n[TEST 11] TV Watch options alias: /api/tv/1396/watch-options');
+    const res = await axios.get(`${BASE_URL}/tv/1396/watch-options?region=IN`);
+    assert(res.status === 200, 'TV Watch-options alias returned 200');
+    const data = res.data.data;
+    assert(data.type === 'tv', 'Identified as TV type via /api/tv prefix');
+    assert(data.totalOptions > 0, 'Found providers for TV series');
+  } catch (err) {
+    assert(false, `TV Watch options alias test failed: ${err.message}`);
+  }
+
   console.log('\n======================================================');
   console.log(`RESULTS: ${passed} PASSED, ${failed} FAILED`);
   console.log('======================================================\n');

@@ -137,7 +137,8 @@ export const getMovieTrailer = async (req, res, next) => {
       });
     }
 
-    const type = req.query.type === 'tv' ? 'tv' : 'movie';
+    const isTvRoute = (req.baseUrl && req.baseUrl.includes('/tv')) || req.query.type === 'tv';
+    const type = isTvRoute ? 'tv' : 'movie';
     const language = req.query.language || 'en-US';
     const videos = await tmdbService.getMovieVideos(movieId, type, language);
 
@@ -153,9 +154,12 @@ export const getMovieTrailer = async (req, res, next) => {
         grouped: videos.grouped || {
           trailers: [],
           teasers: [],
+          finalTrailers: [],
+          announcements: [],
           clips: [],
           featurettes: [],
           behindTheScenes: [],
+          all: [],
         },
         allVideos: videos.allVideos || videos.results || [],
       },
@@ -176,7 +180,8 @@ export const getMovieProviders = async (req, res, next) => {
       });
     }
     const region = (req.query.region || 'IN').toUpperCase();
-    const type = req.query.type === 'tv' ? 'tv' : 'movie';
+    const isTvRoute = (req.baseUrl && req.baseUrl.includes('/tv')) || req.query.type === 'tv';
+    const type = isTvRoute ? 'tv' : 'movie';
     const providers = await tmdbService.getWatchProviders(movieId, region, type);
     return res.status(200).json({
       success: true,

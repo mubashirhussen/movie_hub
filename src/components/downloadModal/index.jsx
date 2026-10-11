@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
-import { Download, CheckCircle2, ShieldCheck, Film, HardDrive, Sparkles, X, ExternalLink, Play } from 'lucide-react';
+import { Download, CheckCircle2, ShieldCheck, Film, HardDrive, Sparkles, X, ExternalLink, Play, AlertCircle, Smartphone } from 'lucide-react';
 import './index.css';
 
 const DownloadModal = ({ isOpen, onClose, movie }) => {
@@ -10,56 +10,56 @@ const DownloadModal = ({ isOpen, onClose, movie }) => {
 
   if (!isOpen || !movie) return null;
 
-  const title = movie.title || 'Movie';
+  const title = movie.title || movie.name || 'Movie';
   const ytKey = movie.trailer_key || movie.youtube_full_movie_key || null;
 
-  const downloadOptions = [
+  const officialAppOptions = [
     {
-      id: '4k',
-      label: '4K Ultra HD Cinema Master',
-      resolution: '3840 x 2160',
-      format: 'MKV / H.265 (HEVC) + Dolby Atmos 7.1',
-      size: '4.85 GB',
-      badge: 'PREMIUM 4K',
-      badgeColor: 'badge-gold',
-      speed: 'Super Fast CDN',
-    },
-    {
-      id: '1080p',
-      label: '1080p Full HD Studio Rip',
-      resolution: '1920 x 1080',
-      format: 'MP4 / H.264 + Dolby Digital 5.1',
-      size: '2.10 GB',
-      badge: 'RECOMMENDED',
+      id: 'netflix',
+      name: 'Netflix App Offline Downloads',
+      description: 'Download in official Netflix Android/iOS/Windows app for offline viewing',
+      quality: 'Up to 4K UHD (Plan-dependent)',
+      url: 'https://help.netflix.com/en/node/54816',
+      badge: 'OFFICIAL APP',
       badgeColor: 'badge-emerald',
-      speed: 'Ultra Fast CDN',
     },
     {
-      id: '720p',
-      label: '720p HD Mobile & Tablet',
-      resolution: '1280 x 720',
-      format: 'MP4 / AAC 2.0 Stereo',
-      size: '950 MB',
-      badge: 'DATA SAVER',
+      id: 'prime',
+      name: 'Prime Video Mobile Downloads',
+      description: 'Save titles offline inside Prime Video app on phone or tablet',
+      quality: 'HD / 1080p / 4K UHD',
+      url: 'https://www.amazon.com/gp/video/splash/download',
+      badge: 'OFFICIAL APP',
       badgeColor: 'badge-blue',
-      speed: 'Instant Download',
     },
+    {
+      id: 'hotstar',
+      name: 'Disney+ Hotstar Downloads',
+      description: 'Official in-app download feature for subscriber offline playback',
+      quality: 'HD / 4K Dolby Vision',
+      url: 'https://www.hotstar.com',
+      badge: 'OFFICIAL APP',
+      badgeColor: 'badge-gold',
+    },
+  ];
+
+  const companionPackages = [
     {
       id: 'meta_package',
-      label: 'Complete Movie Media & Subtitle Package',
-      resolution: 'Original Studio Posters & SRTs',
-      format: 'ZIP (Poster, Backdrops, Subtitles & Metadata)',
-      size: '45 MB',
-      badge: 'EXTRAS',
+      label: 'Complete Movie Companion & Metadata Kit',
+      resolution: 'Official Posters, Synopsis & Verified Links',
+      format: 'TXT / JSON (Official Streaming & Metadata Guide)',
+      size: '12 KB',
+      badge: 'COMPANION KIT',
       badgeColor: 'badge-purple',
-      speed: 'Direct Download',
+      speed: 'Instant Download',
     },
   ];
 
   const handleStartDownload = (option) => {
     if (downloadingQuality) return;
     setDownloadingQuality(option.id);
-    setProgress(5);
+    setProgress(10);
 
     const interval = setInterval(() => {
       setProgress((prev) => {
@@ -67,33 +67,39 @@ const DownloadModal = ({ isOpen, onClose, movie }) => {
           clearInterval(interval);
           setDownloadingQuality(null);
           setDownloadedList((prevList) => [...prevList, option.id]);
-
-          // Trigger real browser file download
           triggerActualFileDownload(option);
           return 100;
         }
-        const increment = Math.floor(Math.random() * 25) + 15;
+        const increment = Math.floor(Math.random() * 25) + 20;
         return Math.min(100, prev + increment);
       });
-    }, 350);
+    }, 250);
   };
 
   const triggerActualFileDownload = (option) => {
-    const filename = `${title.replace(/[^a-zA-Z0-9]/g, '_')}_${option.id.toUpperCase()}_CineVerse.txt`;
-    const content = `🎬 CineVerse Movie Download Package
+    const filename = `${title.replace(/[^a-zA-Z0-9]/g, '_')}_Companion_Package.txt`;
+    const content = `🎬 CineVerse Verified Movie Guide & Companion Kit
 ==================================================
 Title: ${title}
-Quality: ${option.label}
-Resolution: ${option.resolution}
-Format: ${option.format}
-File Size: ${option.size}
-Release Date: ${movie.release_date || 'N/A'}
-Direct YouTube Stream: https://www.youtube.com/watch?v=${ytKey}
-Direct High-Res Backdrop: ${movie.backdrop_path || ''}
-Direct High-Res Poster: ${movie.poster_path || ''}
-Verified Cinema License: CineVerse DRM Free Pass
+Release Date: ${movie.release_date || movie.first_air_date || 'N/A'}
+Original Language: ${movie.original_language || 'en'}
+TMDB ID: ${movie.id}
 
-Enjoy your movie experience!
+Official Trailer Key: ${ytKey || 'N/A'}
+Direct YouTube Trailer: ${ytKey ? `https://www.youtube.com/watch?v=${ytKey}` : 'N/A'}
+
+LEGAL OFFLINE PLAYBACK NOTICE:
+--------------------------------------------------
+To respect creator copyrights and distribution licenses, full movies
+cannot be extracted or exported as MP4 files through CineVerse.
+
+To watch ${title} offline legally:
+1. Open your licensed OTT platform (Netflix, Amazon Prime Video, Disney+ Hotstar, etc.)
+2. Search for "${title}" in the platform's official mobile or tablet app
+3. Tap the "Download" icon next to the title for authorized offline viewing.
+
+Quality Note: Quality varies by subscription plan; check the platform.
+Attribution: Streaming data powered by JustWatch via TMDB.
 ==================================================`;
 
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
@@ -124,7 +130,7 @@ Enjoy your movie experience!
             <div>
               <h2 className="download-modal-heading">Download Movie to Device</h2>
               <p className="download-modal-sub">
-                Select your preferred streaming quality and offline audio profile for <strong>{title}</strong>
+                Official streaming availability and legal offline viewing options for <strong>{title}</strong>
               </p>
             </div>
           </div>
@@ -140,13 +146,62 @@ Enjoy your movie experience!
 
         {/* Modal Body */}
         <div className="download-modal-body">
-          <div className="download-security-banner">
-            <ShieldCheck size={18} className="shield-icon" />
-            <span>High-speed encrypted CDN download servers active. No buffering, 100% DRM-free offline viewing.</span>
+          {/* Legal Compliance Banner */}
+          <div className="download-security-banner" style={{ background: 'rgba(234, 179, 8, 0.1)', borderColor: 'rgba(234, 179, 8, 0.25)' }}>
+            <AlertCircle size={18} style={{ color: '#eab308', flexShrink: 0 }} />
+            <span style={{ color: '#fef08a', fontSize: '0.8rem', lineHeight: '1.4' }}>
+              <strong>Notice:</strong> To protect digital copyright, full movies cannot be exported as MP4 files through CineVerse. Please use the official apps of licensed platforms below for authorized offline downloads.
+            </span>
           </div>
 
-          <div className="download-options-list">
-            {downloadOptions.map((opt) => {
+          {/* Official App Offline Download Options */}
+          <div className="official-apps-section" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem' }}>
+            <h4 style={{ fontSize: '0.85rem', color: '#e2e8f0', margin: 0, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Official OTT In-App Offline Downloads
+            </h4>
+
+            {officialAppOptions.map((app) => (
+              <div
+                key={app.id}
+                className="download-option-card"
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.85rem' }}
+              >
+                <div className="opt-left">
+                  <div className="opt-header-row" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Smartphone size={16} color="#38bdf8" />
+                    <h4 className="opt-title" style={{ margin: 0, fontSize: '0.9rem', color: '#f8fafc' }}>{app.name}</h4>
+                    <span className={`opt-badge ${app.badgeColor}`}>{app.badge}</span>
+                  </div>
+                  <div className="opt-details-row" style={{ fontSize: '0.78rem', color: '#94a3b8', marginTop: '0.25rem' }}>
+                    <span>{app.description}</span>
+                  </div>
+                  <div className="opt-meta-row" style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>
+                    <span>{app.quality}</span>
+                  </div>
+                </div>
+
+                <div className="opt-right">
+                  <a
+                    href={app.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-opt-download"
+                    style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                  >
+                    <span>Open App</span>
+                    <ExternalLink size={13} />
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* CineVerse Metadata Companion Kit */}
+          <div className="companion-package-section" style={{ marginTop: '0.75rem' }}>
+            <h4 style={{ fontSize: '0.85rem', color: '#e2e8f0', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              CineVerse Metadata & Media Kit
+            </h4>
+            {companionPackages.map((opt) => {
               const isDownloaded = downloadedList.includes(opt.id);
               const isCurrent = downloadingQuality === opt.id;
 
@@ -188,7 +243,7 @@ Enjoy your movie experience!
                         onClick={() => handleStartDownload(opt)}
                       >
                         <Download size={16} />
-                        <span>Download</span>
+                        <span>Download Kit</span>
                       </button>
                     )}
                   </div>
@@ -198,30 +253,32 @@ Enjoy your movie experience!
           </div>
 
           {/* Direct YouTube Media Reference Links */}
-          <div className="download-youtube-stream-box">
-            <div className="yt-stream-info">
-              <Film size={18} color="#e50914" />
-              <div>
-                <strong>Direct YouTube High-Definition Stream Link</strong>
-                <p>Open original verified YouTube full-length stream in a new tab</p>
+          {ytKey && (
+            <div className="download-youtube-stream-box" style={{ marginTop: '0.85rem' }}>
+              <div className="yt-stream-info">
+                <Film size={18} color="#e50914" />
+                <div>
+                  <strong>Official YouTube Promotional Stream</strong>
+                  <p>Open original verified trailer stream in a new tab</p>
+                </div>
               </div>
+              <a
+                href={`https://www.youtube.com/watch?v=${ytKey}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-open-yt-stream"
+              >
+                <Play size={14} fill="currentColor" />
+                <span>Watch on YouTube</span>
+                <ExternalLink size={13} />
+              </a>
             </div>
-            <a
-              href={`https://www.youtube.com/watch?v=${ytKey}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-open-yt-stream"
-            >
-              <Play size={14} fill="currentColor" />
-              <span>Watch on YouTube</span>
-              <ExternalLink size={13} />
-            </a>
-          </div>
+          )}
         </div>
 
         {/* Modal Footer */}
         <div className="download-modal-footer">
-          <span className="footer-note">Supported on Android, iOS, Windows, Mac & Smart TVs</span>
+          <span className="footer-note">Quality varies by plan; check the platform. Powered by JustWatch via TMDB.</span>
           <button type="button" className="btn-modal-done" onClick={onClose}>
             Done
           </button>
