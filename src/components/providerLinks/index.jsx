@@ -23,9 +23,13 @@ const ProviderLinks = ({
   const flatrate = Array.isArray(providersData?.flatrate) ? providersData.flatrate : [];
   const rent = Array.isArray(providersData?.rent) ? providersData.rent : [];
   const buy = Array.isArray(providersData?.buy) ? providersData.buy : [];
+  const free = Array.isArray(providersData?.free) ? providersData.free : [];
+  const ads = Array.isArray(providersData?.ads) ? providersData.ads : [];
   const tmdbLink = providersData?.link || null;
+  const attribution = providersData?.attribution || 'Streaming data powered by JustWatch via TMDB.';
+  const qualityNote = providersData?.qualityNote || 'Quality varies by plan; check the platform.';
 
-  const totalProviders = flatrate.length + rent.length + buy.length;
+  const totalProviders = flatrate.length + rent.length + buy.length + free.length + ads.length;
 
   const handleRegionSelect = (e) => {
     if (onRegionChange) {
@@ -34,7 +38,7 @@ const ProviderLinks = ({
   };
 
   return (
-    <div className="cineverse-providers-section animate-fade-in">
+    <div className="cineverse-providers-section animate-fade-in" id="where-to-watch-section">
       {/* Top Header with Region Selector */}
       <div className="providers-header-bar">
         <div className="providers-title-row">
@@ -50,6 +54,7 @@ const ProviderLinks = ({
             value={region}
             onChange={handleRegionSelect}
             aria-label="Select streaming region"
+            id="providers-region-select"
           >
             {SUPPORTED_REGIONS.map((r) => (
               <option key={r.code} value={r.code}>
@@ -61,10 +66,10 @@ const ProviderLinks = ({
       </div>
 
       {totalProviders === 0 ? (
-        <div className="providers-unavailable-box">
+        <div className="providers-unavailable-box" id="providers-empty-state">
           <AlertCircle size={15} className="alert-icon" />
           <p className="providers-unavailable-text">
-            Availability information is not available for this region ({region}).
+            No legal streaming options found in your region ({region}).
           </p>
           {tmdbLink && (
             <a
@@ -72,6 +77,7 @@ const ProviderLinks = ({
               target="_blank"
               rel="noopener noreferrer"
               className="btn-check-tmdb-link"
+              id="providers-justwatch-empty-link"
             >
               <span>Check JustWatch / TMDB</span>
               <ExternalLink size={12} />
@@ -80,12 +86,14 @@ const ProviderLinks = ({
         </div>
       ) : (
         <div className="providers-content-container">
-          {/* Category Tabs: All / Stream / Rent / Buy */}
-          <div className="providers-category-tabs">
+          {/* Category Tabs: All / Stream / Rent / Buy / Free / Ads */}
+          <div className="providers-category-tabs" role="tablist">
             <button
               type="button"
               className={`btn-provider-tab ${activeCategory === 'all' ? 'active' : ''}`}
               onClick={() => setActiveCategory('all')}
+              role="tab"
+              aria-selected={activeCategory === 'all'}
             >
               All ({totalProviders})
             </button>
@@ -94,8 +102,10 @@ const ProviderLinks = ({
                 type="button"
                 className={`btn-provider-tab ${activeCategory === 'flatrate' ? 'active' : ''}`}
                 onClick={() => setActiveCategory('flatrate')}
+                role="tab"
+                aria-selected={activeCategory === 'flatrate'}
               >
-                Stream / Sub ({flatrate.length})
+                Stream ({flatrate.length})
               </button>
             )}
             {rent.length > 0 && (
@@ -103,6 +113,8 @@ const ProviderLinks = ({
                 type="button"
                 className={`btn-provider-tab ${activeCategory === 'rent' ? 'active' : ''}`}
                 onClick={() => setActiveCategory('rent')}
+                role="tab"
+                aria-selected={activeCategory === 'rent'}
               >
                 Rent ({rent.length})
               </button>
@@ -112,8 +124,32 @@ const ProviderLinks = ({
                 type="button"
                 className={`btn-provider-tab ${activeCategory === 'buy' ? 'active' : ''}`}
                 onClick={() => setActiveCategory('buy')}
+                role="tab"
+                aria-selected={activeCategory === 'buy'}
               >
                 Buy ({buy.length})
+              </button>
+            )}
+            {free.length > 0 && (
+              <button
+                type="button"
+                className={`btn-provider-tab ${activeCategory === 'free' ? 'active' : ''}`}
+                onClick={() => setActiveCategory('free')}
+                role="tab"
+                aria-selected={activeCategory === 'free'}
+              >
+                Free ({free.length})
+              </button>
+            )}
+            {ads.length > 0 && (
+              <button
+                type="button"
+                className={`btn-provider-tab ${activeCategory === 'ads' ? 'active' : ''}`}
+                onClick={() => setActiveCategory('ads')}
+                role="tab"
+                aria-selected={activeCategory === 'ads'}
+              >
+                With Ads ({ads.length})
               </button>
             )}
           </div>
@@ -125,7 +161,7 @@ const ProviderLinks = ({
                 <ProviderPill
                   key={`sub-${p.provider_id || p.provider_name}`}
                   provider={p}
-                  typeBadge="Sub"
+                  typeBadge="Stream"
                   tmdbLink={tmdbLink}
                   movieTitle={movieTitle}
                 />
@@ -152,19 +188,41 @@ const ProviderLinks = ({
                   movieTitle={movieTitle}
                 />
               ))}
+
+            {(activeCategory === 'all' || activeCategory === 'free') &&
+              free.map((p) => (
+                <ProviderPill
+                  key={`free-${p.provider_id || p.provider_name}`}
+                  provider={p}
+                  typeBadge="Free"
+                  tmdbLink={tmdbLink}
+                  movieTitle={movieTitle}
+                />
+              ))}
+
+            {(activeCategory === 'all' || activeCategory === 'ads') &&
+              ads.map((p) => (
+                <ProviderPill
+                  key={`ads-${p.provider_id || p.provider_name}`}
+                  provider={p}
+                  typeBadge="Ads"
+                  tmdbLink={tmdbLink}
+                  movieTitle={movieTitle}
+                />
+              ))}
           </div>
 
           {/* JustWatch disclaimer & regional note */}
           <div className="providers-disclaimer-note">
-            <p>
-              Verified streaming data provided by JustWatch via TMDB. Availability varies by region and can change over time.
-            </p>
+            <p className="providers-attribution-text">{attribution}</p>
+            <p className="providers-quality-text">{qualityNote}</p>
             {tmdbLink && (
               <a
                 href={tmdbLink}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="justwatch-ext-link"
+                id="providers-justwatch-details-link"
               >
                 <span>View Full Details on JustWatch</span>
                 <ExternalLink size={11} />

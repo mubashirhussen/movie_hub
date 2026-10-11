@@ -60,9 +60,10 @@ export const getMovieTrailer = async (movieId, options = {}) => {
 };
 
 export const getMovieProviders = async (movieId, region = 'IN', options = {}) => {
+  const { type = 'movie', ...rest } = options;
   const response = await api.get(`/movies/${movieId}/providers`, {
-    params: { region },
-    ...options,
+    params: { region, type },
+    ...rest,
   });
   const payload = response.data?.data ?? response.data;
   return payload;

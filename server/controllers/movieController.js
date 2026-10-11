@@ -141,7 +141,7 @@ export const getMovieTrailer = async (req, res, next) => {
     const language = req.query.language || 'en-US';
     const videos = await tmdbService.getMovieVideos(movieId, type, language);
 
-    const trailer = tmdbService.selectBestTrailer(videos.results, language);
+    const trailer = videos.trailer || (tmdbService.selectBestTrailer ? tmdbService.selectBestTrailer(videos.results, language) : null);
 
     return res.status(200).json({
       success: true,
@@ -150,7 +150,14 @@ export const getMovieTrailer = async (req, res, next) => {
         type,
         trailer,
         hasTrailer: Boolean(trailer?.key),
-        allVideos: videos.results || [],
+        grouped: videos.grouped || {
+          trailers: [],
+          teasers: [],
+          clips: [],
+          featurettes: [],
+          behindTheScenes: [],
+        },
+        allVideos: videos.allVideos || videos.results || [],
       },
     });
   } catch (error) {
@@ -158,7 +165,7 @@ export const getMovieTrailer = async (req, res, next) => {
   }
 };
 
-// 8. Get Watch Providers (Region = IN with fallback)
+// 8. Get Watch Providers (Region-aware and Content-Type Aware)
 export const getMovieProviders = async (req, res, next) => {
   try {
     const movieId = parseInt(req.params.id);
@@ -169,7 +176,8 @@ export const getMovieProviders = async (req, res, next) => {
       });
     }
     const region = (req.query.region || 'IN').toUpperCase();
-    const providers = await tmdbService.getWatchProviders(movieId, region);
+    const type = req.query.type === 'tv' ? 'tv' : 'movie';
+    const providers = await tmdbService.getWatchProviders(movieId, region, type);
     return res.status(200).json({
       success: true,
       data: providers,

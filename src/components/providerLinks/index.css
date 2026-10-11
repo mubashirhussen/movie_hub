@@ -210,6 +210,18 @@
   border: 1px solid rgba(168, 85, 247, 0.3);
 }
 
+.provider-type-tag.free {
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.provider-type-tag.ads {
+  background: rgba(249, 115, 22, 0.2);
+  color: #fb923c;
+  border: 1px solid rgba(249, 115, 22, 0.3);
+}
+
 .ext-icon {
   opacity: 0.6;
   margin-left: 0.1rem;

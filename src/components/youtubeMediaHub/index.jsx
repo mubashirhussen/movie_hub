@@ -1,65 +1,121 @@
-import React from 'react';
-import { Play, Film, ExternalLink, Image as ImageIcon, Sparkles, Video } from 'lucide-react';
+import React, { useState } from 'react';
+import { Play, Film, ExternalLink, Sparkles, CheckCircle2 } from 'lucide-react';
 import './index.css';
 
-const YouTubeMediaHub = ({ movie, onSelectVideo }) => {
+const YouTubeMediaHub = ({
+  movie,
+  trailerVideos = null,
+  activePlayerKey = null,
+  onSelectVideo,
+}) => {
+  const [activeTab, setActiveTab] = useState('all');
+
   if (!movie) return null;
 
-  const ytKey = movie.trailer_key || movie.youtube_full_movie_key || null;
-  const title = movie.title || 'Movie';
+  const title = movie.title || movie.name || 'Title';
 
-  if (!ytKey) {
+  // Build the list of videos: prefer structured trailerVideos from TMDB, then movie fallback
+  const rawGrouped = trailerVideos?.grouped || {};
+  const trailers = Array.isArray(rawGrouped.trailers) ? rawGrouped.trailers : [];
+  const teasers = Array.isArray(rawGrouped.teasers) ? rawGrouped.teasers : [];
+  const clips = Array.isArray(rawGrouped.clips) ? rawGrouped.clips : [];
+  const featurettes = Array.isArray(rawGrouped.featurettes) ? rawGrouped.featurettes : [];
+  const behindTheScenes = Array.isArray(rawGrouped.behindTheScenes) ? rawGrouped.behindTheScenes : [];
+
+  let allVideos = Array.isArray(trailerVideos?.allVideos) && trailerVideos.allVideos.length > 0
+    ? trailerVideos.allVideos
+    : [];
+
+  // If no structured allVideos, check if movie has a verified trailer_key
+  if (allVideos.length === 0 && movie.trailer_key) {
+    allVideos = [
+      {
+        id: `primary-${movie.id}`,
+        key: movie.trailer_key,
+        name: `${title} - Official Trailer`,
+        type: 'Trailer',
+        official: true,
+        site: 'YouTube',
+      },
+    ];
+  }
+
+  // If still completely empty: render clean fallback
+  if (allVideos.length === 0) {
     return (
-      <section className="youtube-media-hub-section animate-fade-in">
+      <section className="youtube-media-hub-section animate-fade-in" id="trailers-teasers-section">
         <div className="hub-section-header">
           <div className="hub-header-left">
             <div className="youtube-badge-icon">
               <Film size={20} />
             </div>
             <div>
-              <h3 className="hub-heading">Official Videos & Media Hub</h3>
-              <p className="hub-subheading">High-definition trailers, official teasers and promo clips</p>
+              <h2 className="hub-main-title">Official Trailers & Teasers</h2>
+              <p className="hub-subtitle">Official studio trailers, teasers, and promotional videos</p>
             </div>
           </div>
         </div>
-        <div className="player-offline-box" style={{ padding: '2.5rem', textAlign: 'center', background: 'rgba(15, 23, 42, 0.6)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
+        <div
+          className="player-offline-box"
+          id="trailers-empty-state"
+          style={{
+            padding: '2.5rem',
+            textAlign: 'center',
+            background: 'rgba(15, 23, 42, 0.6)',
+            borderRadius: '12px',
+            border: '1px solid rgba(255,255,255,0.08)',
+          }}
+        >
           <Film size={36} color="#94a3b8" style={{ marginBottom: '0.75rem' }} />
-          <p style={{ color: '#94a3b8', margin: 0, fontSize: '0.95rem' }}>Trailer unavailable for this title.</p>
+          <p style={{ color: '#94a3b8', margin: 0, fontSize: '0.95rem' }} className="no-trailer-msg">
+            Trailer unavailable for this title.
+          </p>
         </div>
       </section>
     );
   }
 
-  // Build list of verified YouTube media items for this title
-  const mediaList = [
-    {
-      id: 'main-trailer',
-      type: 'Official Trailer',
-      title: `${title} - Official Main Trailer`,
-      key: ytKey,
-      thumbnail: `https://img.youtube.com/vi/${ytKey}/hqdefault.jpg`,
-      fallbackThumb: `https://img.youtube.com/vi/${ytKey}/mqdefault.jpg`,
-      duration: '2:45',
-      badge: 'TRAILER',
-    },
-    ...(Array.isArray(movie.youtube_teasers) && movie.youtube_teasers[0] && movie.youtube_teasers[0] !== ytKey
-      ? [
-          {
-            id: 'teaser-1',
-            type: 'Official Teaser',
-            title: `${title} - First Look & Title Teaser`,
-            key: movie.youtube_teasers[0],
-            thumbnail: `https://img.youtube.com/vi/${movie.youtube_teasers[0]}/hqdefault.jpg`,
-            fallbackThumb: `https://img.youtube.com/vi/${movie.youtube_teasers[0]}/mqdefault.jpg`,
-            duration: '1:30',
-            badge: 'TEASER',
-          },
-        ]
-      : []),
-  ];
+  // Filter videos based on active tab
+  const getFilteredVideos = () => {
+    switch (activeTab) {
+      case 'trailers':
+        return trailers.length > 0 ? trailers : allVideos.filter((v) => v.type === 'Trailer');
+      case 'teasers':
+        return teasers.length > 0 ? teasers : allVideos.filter((v) => v.type === 'Teaser');
+      case 'clips':
+        return clips.length > 0 ? clips : allVideos.filter((v) => v.type === 'Clip');
+      case 'behindTheScenes':
+        return behindTheScenes.length > 0 ? behindTheScenes : allVideos.filter((v) => v.type === 'Behind the Scenes');
+      case 'featurettes':
+        return featurettes.length > 0 ? featurettes : allVideos.filter((v) => v.type === 'Featurette');
+      case 'all':
+      default:
+        return allVideos;
+    }
+  };
+
+  const displayedVideos = getFilteredVideos();
+
+  // Normalize badge css class name
+  const getBadgeClass = (type) => {
+    switch (type) {
+      case 'Trailer':
+        return 'badge-trailer';
+      case 'Teaser':
+        return 'badge-teaser';
+      case 'Clip':
+        return 'badge-clip';
+      case 'Behind the Scenes':
+        return 'badge-behind-the-scenes';
+      case 'Featurette':
+        return 'badge-featurette';
+      default:
+        return 'badge-trailer';
+    }
+  };
 
   return (
-    <section className="youtube-media-hub-section animate-fade-in">
+    <section className="youtube-media-hub-section animate-fade-in" id="trailers-teasers-section">
       <div className="hub-section-header">
         <div className="hub-header-left">
           <div className="youtube-badge-icon">
@@ -69,9 +125,9 @@ const YouTubeMediaHub = ({ movie, onSelectVideo }) => {
             </svg>
           </div>
           <div>
-            <h2 className="hub-main-title">YouTube Trailers, Teasers & Media Hub</h2>
+            <h2 className="hub-main-title">Official Trailers, Teasers & Media</h2>
             <p className="hub-subtitle">
-              Verified original trailers, official teasers, studio posts & full movie YouTube streaming links
+              Verified original trailers, studio teasers, behind-the-scenes clips, and featurettes
             </p>
           </div>
         </div>
@@ -81,72 +137,170 @@ const YouTubeMediaHub = ({ movie, onSelectVideo }) => {
           target="_blank"
           rel="noopener noreferrer"
           className="btn-hub-all-yt"
+          id="btn-youtube-search-external"
         >
           <span>More on YouTube</span>
           <ExternalLink size={14} />
         </a>
       </div>
 
-      <div className="hub-media-grid">
-        {mediaList.map((item) => (
-          <div key={item.id} className="hub-media-card">
+      {/* Tabs by video category */}
+      <div className="hub-category-tabs" role="tablist">
+        <button
+          type="button"
+          className={`btn-hub-tab ${activeTab === 'all' ? 'active' : ''}`}
+          onClick={() => setActiveTab('all')}
+          role="tab"
+          aria-selected={activeTab === 'all'}
+        >
+          All ({allVideos.length})
+        </button>
+        {trailers.length > 0 && (
+          <button
+            type="button"
+            className={`btn-hub-tab ${activeTab === 'trailers' ? 'active' : ''}`}
+            onClick={() => setActiveTab('trailers')}
+            role="tab"
+            aria-selected={activeTab === 'trailers'}
+          >
+            Trailers ({trailers.length})
+          </button>
+        )}
+        {teasers.length > 0 && (
+          <button
+            type="button"
+            className={`btn-hub-tab ${activeTab === 'teasers' ? 'active' : ''}`}
+            onClick={() => setActiveTab('teasers')}
+            role="tab"
+            aria-selected={activeTab === 'teasers'}
+          >
+            Teasers ({teasers.length})
+          </button>
+        )}
+        {clips.length > 0 && (
+          <button
+            type="button"
+            className={`btn-hub-tab ${activeTab === 'clips' ? 'active' : ''}`}
+            onClick={() => setActiveTab('clips')}
+            role="tab"
+            aria-selected={activeTab === 'clips'}
+          >
+            Clips ({clips.length})
+          </button>
+        )}
+        {behindTheScenes.length > 0 && (
+          <button
+            type="button"
+            className={`btn-hub-tab ${activeTab === 'behindTheScenes' ? 'active' : ''}`}
+            onClick={() => setActiveTab('behindTheScenes')}
+            role="tab"
+            aria-selected={activeTab === 'behindTheScenes'}
+          >
+            Behind the Scenes ({behindTheScenes.length})
+          </button>
+        )}
+        {featurettes.length > 0 && (
+          <button
+            type="button"
+            className={`btn-hub-tab ${activeTab === 'featurettes' ? 'active' : ''}`}
+            onClick={() => setActiveTab('featurettes')}
+            role="tab"
+            aria-selected={activeTab === 'featurettes'}
+          >
+            Featurettes ({featurettes.length})
+          </button>
+        )}
+      </div>
+
+      {/* Video Cards Grid */}
+      <div className="hub-media-grid" id="trailers-grid">
+        {displayedVideos.map((item, index) => {
+          const isCurrentlyPlaying = activePlayerKey && activePlayerKey === item.key;
+          const thumbnail = `https://img.youtube.com/vi/${item.key}/hqdefault.jpg`;
+          const fallbackThumb = `https://img.youtube.com/vi/${item.key}/mqdefault.jpg`;
+
+          return (
             <div
-              className="hub-thumbnail-wrap"
-              onClick={() => onSelectVideo(item.key)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  onSelectVideo(item.key);
-                }
-              }}
+              key={`media-${item.key}-${item.type || 'video'}-${index}`}
+              className={`hub-media-card ${isCurrentlyPlaying ? 'playing-card' : ''}`}
             >
-              <img
-                src={item.thumbnail}
-                alt={item.title}
-                className="hub-thumb-img"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = item.fallbackThumb;
+              <div
+                className="hub-thumbnail-wrap"
+                onClick={() => onSelectVideo && onSelectVideo(item.key)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    onSelectVideo && onSelectVideo(item.key);
+                  }
                 }}
-              />
-              <div className="thumb-gradient-overlay" />
-              
-              <div className="hub-play-button-overlay">
-                <Play size={20} fill="#ffffff" color="#ffffff" />
+              >
+                <img
+                  src={thumbnail}
+                  alt={item.name || `${title} video`}
+                  className="hub-thumb-img"
+                  loading="lazy"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = fallbackThumb;
+                  }}
+                />
+                <div className="thumb-gradient-overlay" />
+
+                <div className="hub-play-button-overlay">
+                  <Play size={20} fill="#ffffff" color="#ffffff" />
+                </div>
+
+                <div style={{ position: 'absolute', top: 8, left: 8, display: 'flex', gap: 4 }}>
+                  <span className={`hub-category-badge ${getBadgeClass(item.type)}`}>
+                    {item.type || 'Video'}
+                  </span>
+                  {item.official && (
+                    <span className="hub-category-badge badge-official">
+                      Official
+                    </span>
+                  )}
+                </div>
               </div>
 
-              <span className="hub-duration-tag">{item.duration}</span>
-              <span className={`hub-category-badge badge-${item.badge.toLowerCase().replace(' ', '-')}`}>
-                {item.badge}
-              </span>
-            </div>
+              <div className="hub-card-body">
+                <h3 className="hub-card-title" title={item.name}>
+                  {item.name || `${title} Video`}
+                </h3>
 
-            <div className="hub-card-body">
-              <h3 className="hub-card-title" title={item.title}>{item.title}</h3>
-              <div className="hub-card-actions">
-                <button
-                  type="button"
-                  className="btn-hub-play-now"
-                  onClick={() => onSelectVideo(item.key)}
-                >
-                  <Play size={13} fill="currentColor" />
-                  <span>Play In Player</span>
-                </button>
+                <div className="hub-card-actions">
+                  <button
+                    type="button"
+                    className={`btn-hub-play-now ${isCurrentlyPlaying ? 'active' : ''}`}
+                    onClick={() => onSelectVideo && onSelectVideo(item.key)}
+                  >
+                    {isCurrentlyPlaying ? (
+                      <>
+                        <CheckCircle2 size={13} color="#22c55e" />
+                        <span>Now Playing</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play size={13} fill="currentColor" />
+                        <span>Play In Player</span>
+                      </>
+                    )}
+                  </button>
 
-                <a
-                  href={`https://www.youtube.com/watch?v=${item.key}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-hub-external-yt"
-                  title="Open on YouTube"
-                >
-                  <ExternalLink size={13} />
-                </a>
+                  <a
+                    href={`https://www.youtube.com/watch?v=${item.key}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-hub-external-yt"
+                    title="Open on YouTube"
+                  >
+                    <ExternalLink size={13} />
+                  </a>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

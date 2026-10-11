@@ -15,7 +15,8 @@ import {
   Server,
   Sparkles,
   Building2,
-  Flag
+  Flag,
+  Tv,
 } from 'lucide-react';
 import { getImageUrl, getBackdropUrl } from '../../utils/imageUrl';
 import { formatDate } from '../../utils/formatDate';
@@ -44,6 +45,7 @@ const MovieDetails = () => {
   const [credits, setCredits] = useState(null);
   const [trailerKey, setTrailerKey] = useState(null);
   const [activePlayerKey, setActivePlayerKey] = useState(null);
+  const [trailerVideos, setTrailerVideos] = useState({ grouped: {}, allVideos: [] });
   const [selectedServer, setSelectedServer] = useState('yt-hd');
   const [providers, setProviders] = useState(null);
   const [selectedRegion, setSelectedRegion] = useState('IN');
@@ -67,6 +69,7 @@ const MovieDetails = () => {
     setError(null);
     setTrailerKey(null);
     setActivePlayerKey(null);
+    setTrailerVideos({ grouped: {}, allVideos: [] });
     window.scrollTo({ top: 0, behavior: 'instant' });
 
     try {
@@ -90,7 +93,7 @@ const MovieDetails = () => {
       const [creditsData, trailerData, providersData, similarData, recsData] = await Promise.allSettled([
         movieService.getMovieCast(movieId),
         movieService.getMovieTrailer(movieId, { type: contentType }),
-        movieService.getMovieProviders(movieId, selectedRegion),
+        movieService.getMovieProviders(movieId, selectedRegion, { type: contentType }),
         movieService.getSimilarMovies(movieId, 1),
         movieService.getMovieRecommendations(movieId, 1),
       ]);
@@ -105,7 +108,20 @@ const MovieDetails = () => {
       let resolvedTrailerKey = null;
       if (trailerData.status === 'fulfilled') {
         resolvedTrailerKey = trailerData.value?.trailer?.key || trailerData.value?.key || null;
+        setTrailerVideos({
+          grouped: trailerData.value?.grouped || {
+            trailers: [],
+            teasers: [],
+            clips: [],
+            featurettes: [],
+            behindTheScenes: [],
+          },
+          allVideos: trailerData.value?.allVideos || [],
+        });
+      } else {
+        setTrailerVideos({ grouped: {}, allVideos: [] });
       }
+
       if (!resolvedTrailerKey && movieData.trailer_key) {
         resolvedTrailerKey = movieData.trailer_key;
       }
@@ -116,7 +132,7 @@ const MovieDetails = () => {
       if (providersData.status === 'fulfilled') {
         setProviders(providersData.value);
       } else {
-        setProviders({ region: selectedRegion, flatrate: [], rent: [], buy: [] });
+        setProviders({ region: selectedRegion, flatrate: [], rent: [], buy: [], free: [], ads: [] });
       }
 
       if (similarData.status === 'fulfilled') {
@@ -148,6 +164,7 @@ const MovieDetails = () => {
     setCredits({ cast: [], crew: [] });
     setTrailerKey(null);
     setActivePlayerKey(null);
+    setTrailerVideos({ grouped: {}, allVideos: [] });
     setProviders(null);
     setSimilarMovies([]);
     setRecommendations([]);
@@ -157,7 +174,8 @@ const MovieDetails = () => {
   const handleRegionChange = async (newRegion) => {
     setSelectedRegion(newRegion);
     try {
-      const updated = await movieService.getMovieProviders(movieId, newRegion);
+      const contentType = movie?.media_type || (movie?.first_air_date ? 'tv' : 'movie');
+      const updated = await movieService.getMovieProviders(movieId, newRegion, { type: contentType });
       setProviders(updated);
     } catch (err) {
       console.warn('Failed to fetch providers for region', newRegion, err.message);
@@ -436,23 +454,40 @@ const MovieDetails = () => {
           <div className="player-bottom-controls-bar">
             <div className="stream-badge-row">
               <span className="live-pulse-dot" />
-              <span className="stream-quality-text">Active Stream: 1080p 60FPS Dolby Audio</span>
+              <span className="stream-quality-text">Official Cinema Stream Player (HD)</span>
             </div>
 
-            <button
-              type="button"
-              className="btn-player-download-trigger"
-              onClick={() => setDownloadOpen(true)}
-            >
-              <Download size={15} />
-              <span>Download Movie</span>
-            </button>
+            <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center' }}>
+              <button
+                type="button"
+                className="btn-player-download-trigger"
+                onClick={() => {
+                  const el = document.getElementById('where-to-watch-section');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+                id="btn-player-where-to-watch"
+              >
+                <Tv size={15} />
+                <span>Where to Watch</span>
+              </button>
+
+              <button
+                type="button"
+                className="btn-player-download-trigger"
+                onClick={() => setDownloadOpen(true)}
+              >
+                <Download size={15} />
+                <span>Media Package</span>
+              </button>
+            </div>
           </div>
         </section>
 
         {/* YouTube Media Hub & Clips Carousel */}
         <YouTubeMediaHub
           movie={movie}
+          trailerVideos={trailerVideos}
+          activePlayerKey={activePlayerKey}
           onSelectVideo={handleSelectYouTubeVideo}
         />
 

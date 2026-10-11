@@ -409,6 +409,75 @@ export const selectBestTrailer = (videos = [], preferredLang = 'en') => {
   return null;
 };
 
+// Process, sanitize, sort, and group YouTube videos by type
+export const processAndGroupVideos = (rawVideos = [], preferredLang = 'en') => {
+  if (!Array.isArray(rawVideos) || rawVideos.length === 0) {
+    return {
+      allVideos: [],
+      grouped: {
+        trailers: [],
+        teasers: [],
+        clips: [],
+        featurettes: [],
+        behindTheScenes: [],
+      },
+    };
+  }
+
+  const pref = (preferredLang || 'en').toLowerCase().slice(0, 2);
+
+  // Filter YouTube videos with valid keys
+  const ytVideos = rawVideos
+    .filter(
+      (v) =>
+        v &&
+        v.site === 'YouTube' &&
+        v.key &&
+        typeof v.key === 'string' &&
+        /^[a-zA-Z0-9_-]{6,20}$/.test(v.key.trim())
+    )
+    .map((v) => ({
+      id: v.id || v.key,
+      key: v.key.trim(),
+      name: (v.name || 'Video').trim(),
+      type: v.type || 'Other',
+      site: 'YouTube',
+      language: v.iso_639_1 || 'en',
+      region: v.iso_3166_1 || '',
+      official: Boolean(v.official),
+      publishedAt: v.published_at || null,
+      embedUrl: `https://www.youtube-nocookie.com/embed/${v.key.trim()}?autoplay=0&rel=0&modestbranding=1`,
+    }));
+
+  // Sort: official first, then matching preferred language, then newest published date
+  ytVideos.sort((a, b) => {
+    if (a.official !== b.official) {
+      return a.official ? -1 : 1;
+    }
+    const aLangMatch = a.language?.toLowerCase() === pref;
+    const bLangMatch = b.language?.toLowerCase() === pref;
+    if (aLangMatch !== bLangMatch) {
+      return aLangMatch ? -1 : 1;
+    }
+    const aTime = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
+    const bTime = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
+    return bTime - aTime;
+  });
+
+  const grouped = {
+    trailers: ytVideos.filter((v) => v.type === 'Trailer'),
+    teasers: ytVideos.filter((v) => v.type === 'Teaser'),
+    clips: ytVideos.filter((v) => v.type === 'Clip'),
+    featurettes: ytVideos.filter((v) => v.type === 'Featurette'),
+    behindTheScenes: ytVideos.filter((v) => v.type === 'Behind the Scenes'),
+  };
+
+  return {
+    allVideos: ytVideos,
+    grouped,
+  };
+};
+
 const getSeedPagination = (list, page = 1, limit = 12) => {
   const safePage = Math.max(1, parseInt(page) || 1);
   const startIndex = (safePage - 1) * limit;
@@ -716,16 +785,28 @@ export const getMovieCredits = async (movieId) => {
   });
 };
 
-// 6. Trailers and Video Embeds (Supports Movie and TV Series)
+// 6. Trailers and Video Embeds (Supports Movie and TV Series with Grouping)
 export const getMovieVideos = async (id, type = 'movie', language = 'en-US') => {
   const safeId = parseInt(id, 10);
-  if (!safeId || isNaN(safeId)) return { id: safeId, results: [] };
+  if (!safeId || isNaN(safeId)) {
+    return {
+      id: safeId,
+      media_type: type,
+      results: [],
+      allVideos: [],
+      grouped: { trailers: [], teasers: [], clips: [], featurettes: [], behindTheScenes: [] },
+      trailer: null,
+      hasTrailer: false,
+    };
+  }
 
-  const endpoint = type === 'tv' ? `/tv/${safeId}/videos` : `/movie/${safeId}/videos`;
-  const cacheKey = `videos_${type}_${safeId}_${language}`;
+  const validTypes = ['movie', 'tv'];
+  const safeType = validTypes.includes(type) ? type : 'movie';
+  const endpoint = safeType === 'tv' ? `/tv/${safeId}/videos` : `/movie/${safeId}/videos`;
+  const cacheKey = `videos_${safeType}_${safeId}_${language}`;
 
   return executeWithDeduplication(cacheKey, async () => {
-    let videos = [];
+    let rawVideos = [];
 
     // 1. Query with requested language first
     try {
@@ -733,20 +814,20 @@ export const getMovieVideos = async (id, type = 'movie', language = 'en-US') => 
         params: { api_key: TMDB_API_KEY, language },
       });
       if (Array.isArray(response.data?.results) && response.data.results.length > 0) {
-        videos = response.data.results;
+        rawVideos = response.data.results;
       }
     } catch (error) {
       // non-fatal, fallback to all languages
     }
 
     // 2. If no videos found in requested language, query without language filter
-    if (videos.length === 0) {
+    if (rawVideos.length === 0) {
       try {
         const responseAll = await safeTmdbRequest(endpoint, {
           params: { api_key: TMDB_API_KEY },
         });
         if (Array.isArray(responseAll.data?.results) && responseAll.data.results.length > 0) {
-          videos = responseAll.data.results;
+          rawVideos = responseAll.data.results;
         }
       } catch (error) {
         console.warn(`TMDB videos fallback notice: ${sanitizeErrorMsg(error)}`);
@@ -754,13 +835,13 @@ export const getMovieVideos = async (id, type = 'movie', language = 'en-US') => 
     }
 
     // 3. If still empty, check seedMovies or curated map ONLY for this specific ID (never borrow another movie!)
-    if (videos.length === 0) {
+    if (rawVideos.length === 0) {
       const seedMovie = seedMovies.find((m) => Number(m.id) === Number(safeId));
       const curated = curatedYouTubeLibrary[safeId];
       const verifiedKey = seedMovie?.trailer_key || curated?.trailer;
 
       if (verifiedKey) {
-        videos = [
+        rawVideos = [
           {
             id: `verified-${safeId}`,
             key: verifiedKey,
@@ -773,10 +854,22 @@ export const getMovieVideos = async (id, type = 'movie', language = 'en-US') => 
       }
     }
 
+    const { allVideos, grouped } = processAndGroupVideos(rawVideos, language);
+    const bestTrailer = selectBestTrailer(rawVideos, language);
+
     const payload = {
       id: safeId,
-      media_type: type,
-      results: videos,
+      media_type: safeType,
+      results: rawVideos, // preserve backward compatibility for existing tests
+      allVideos,
+      grouped,
+      trailer: bestTrailer
+        ? {
+            ...bestTrailer,
+            embedUrl: `https://www.youtube-nocookie.com/embed/${bestTrailer.key}?autoplay=0&rel=0&modestbranding=1`,
+          }
+        : null,
+      hasTrailer: Boolean(bestTrailer?.key),
     };
 
     setInCache(cacheKey, payload, CACHE_TTLS.DETAILS);
@@ -784,59 +877,87 @@ export const getMovieVideos = async (id, type = 'movie', language = 'en-US') => 
   });
 };
 
-// 7. Watch Providers (Region-aware with verified TMDB data)
-export const getWatchProviders = async (movieId, requestedRegion = 'IN') => {
-  const safeMovieId = parseInt(movieId, 10);
+// 7. Watch Providers (Region-aware and Content-Type Aware with verified TMDB data)
+export const getWatchProviders = async (id, requestedRegion = 'IN', type = 'movie') => {
+  const safeId = parseInt(id, 10);
+  if (!safeId || isNaN(safeId)) return null;
+
+  const validTypes = ['movie', 'tv'];
+  const safeType = validTypes.includes(type) ? type : 'movie';
   const region = (requestedRegion || 'IN').toUpperCase();
-  const cacheKey = `providers_${safeMovieId}_${region}`;
+  const endpoint = safeType === 'tv' ? `/tv/${safeId}/watch/providers` : `/movie/${safeId}/watch/providers`;
+  const cacheKey = `providers_${safeType}_${safeId}_${region}`;
 
   return executeWithDeduplication(cacheKey, async () => {
     try {
-      const response = await safeTmdbRequest(`/movie/${safeMovieId}/watch/providers`, {
+      const response = await safeTmdbRequest(endpoint, {
         params: { api_key: TMDB_API_KEY },
       });
 
       const results = response.data?.results || {};
       const regionData = results[region] || null;
 
-      if (regionData) {
-        const formatted = {
-          region,
-          link: regionData.link || 'https://www.themoviedb.org',
-          flatrate: Array.isArray(regionData.flatrate) ? regionData.flatrate : [],
-          rent: Array.isArray(regionData.rent) ? regionData.rent : [],
-          buy: Array.isArray(regionData.buy) ? regionData.buy : [],
-          availableRegions: Object.keys(results),
-        };
-        setInCache(cacheKey, formatted, CACHE_TTLS.PROVIDERS);
-        return formatted;
-      } else {
-        const emptyResult = {
-          region,
-          link: results['US']?.link || results['IN']?.link || results[Object.keys(results)[0]]?.link || 'https://www.themoviedb.org',
-          flatrate: [],
-          rent: [],
-          buy: [],
-          availableRegions: Object.keys(results),
-        };
-        setInCache(cacheKey, emptyResult, CACHE_TTLS.PROVIDERS);
-        return emptyResult;
-      }
+      const formatProvider = (p) => ({
+        provider_id: p.provider_id,
+        provider_name: p.provider_name,
+        logo_path: p.logo_path || null,
+        display_priority: p.display_priority || 0,
+      });
+
+      const flatrate = Array.isArray(regionData?.flatrate) ? regionData.flatrate.map(formatProvider) : [];
+      const rent = Array.isArray(regionData?.rent) ? regionData.rent.map(formatProvider) : [];
+      const buy = Array.isArray(regionData?.buy) ? regionData.buy.map(formatProvider) : [];
+      const free = Array.isArray(regionData?.free) ? regionData.free.map(formatProvider) : [];
+      const ads = Array.isArray(regionData?.ads) ? regionData.ads.map(formatProvider) : [];
+
+      const totalOptions = flatrate.length + rent.length + buy.length + free.length + ads.length;
+      const officialLink =
+        regionData?.link ||
+        results['US']?.link ||
+        results['IN']?.link ||
+        (Object.values(results)[0] && Object.values(results)[0].link) ||
+        `https://www.themoviedb.org/${safeType}/${safeId}/watch?locale=${region}`;
+
+      const payload = {
+        id: safeId,
+        type: safeType,
+        region,
+        link: officialLink,
+        flatrate,
+        rent,
+        buy,
+        free,
+        ads,
+        totalOptions,
+        attribution: 'Streaming data powered by JustWatch via TMDB.',
+        qualityNote: 'Quality varies by plan; check the platform.',
+        availableRegions: Object.keys(results),
+      };
+
+      setInCache(cacheKey, payload, CACHE_TTLS.PROVIDERS);
+      return payload;
     } catch (error) {
-      console.warn(`TMDB watch providers notice: ${sanitizeErrorMsg(error)}`);
+      console.warn(`TMDB watch providers notice (${sanitizeErrorMsg(error)}) for ${safeType} ID ${safeId}`);
     }
 
-    const emptyFallback = {
+    const fallback = {
+      id: safeId,
+      type: safeType,
       region,
-      link: 'https://www.themoviedb.org',
+      link: `https://www.themoviedb.org/${safeType}/${safeId}/watch?locale=${region}`,
       flatrate: [],
       rent: [],
       buy: [],
-      availableRegions: ['IN', 'US'],
+      free: [],
+      ads: [],
+      totalOptions: 0,
+      attribution: 'Streaming data powered by JustWatch via TMDB.',
+      qualityNote: 'Quality varies by plan; check the platform.',
+      availableRegions: ['IN', 'US', 'GB'],
     };
 
-    setInCache(cacheKey, emptyFallback, CACHE_TTLS.PROVIDERS);
-    return emptyFallback;
+    setInCache(cacheKey, fallback, CACHE_TTLS.PROVIDERS);
+    return fallback;
   });
 };
 
@@ -1370,6 +1491,7 @@ export default {
   getMovieCredits,
   getMovieVideos,
   selectBestTrailer,
+  processAndGroupVideos,
   getWatchProviders,
   searchMovies,
   getSimilarMovies,

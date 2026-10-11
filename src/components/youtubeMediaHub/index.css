@@ -160,6 +160,37 @@
   text-transform: uppercase;
 }
 
+.hub-category-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.btn-hub-tab {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.35rem 0.85rem;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-hub-tab:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-hub-tab.active {
+  background: rgba(229, 9, 20, 0.2);
+  border-color: #e50914;
+  color: #ff4d4d;
+}
+
 .badge-trailer {
   background: rgba(229, 9, 20, 0.9);
   color: #ffffff;
@@ -170,14 +201,25 @@
   color: #ffffff;
 }
 
-.badge-full-movie {
-  background: rgba(16, 185, 129, 0.9);
+.badge-clip {
+  background: rgba(14, 165, 233, 0.9);
   color: #ffffff;
 }
 
-.badge-promo {
+.badge-behind-the-scenes {
+  background: rgba(168, 85, 247, 0.9);
+  color: #ffffff;
+}
+
+.badge-featurette {
+  background: rgba(34, 197, 94, 0.9);
+  color: #ffffff;
+}
+
+.badge-official {
   background: rgba(59, 130, 246, 0.9);
   color: #ffffff;
+  margin-left: 4px;
 }
 
 .hub-card-body {
