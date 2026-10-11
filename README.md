@@ -42,6 +42,12 @@ Movie enthusiasts frequently struggle to find comprehensive, reliable informatio
 - 📋 **Personalized Library**:
   - Multi-tenant isolated Watchlists, Favorites, and chronological Viewing History.
   - Compound unique indexing preventing duplicate entries.
+- ⭐ **Ratings, Reviews & Community Hub**:
+  - 1–5 star interactive rating scale with aggregated community scoreboards and 5-star distribution graphs.
+  - Full review editor with character counter, stored XSS sanitization, and duplicate review prevention.
+  - Plot spoiler protection curtains with "Click to reveal" user toggles.
+  - Helpful voting system (👍 Helpful) with self-voting prevention.
+  - Community moderation reporting workflow (harassment, spam, spoilers, hate speech).
 - 🛡️ **Defensive Security Controls**:
   - Security headers (CSP, HSTS, X-Content-Type-Options, X-Frame-Options).
   - Strict CORS origin allowlisting.
@@ -232,7 +238,7 @@ VITE_API_BASE_URL=/api
 
 ## 13. Testing Instructions
 CineVerse includes a self-bootstrapping master regression runner covering all development phases and production stages:
-- **Run Master Regression Test Suite (All 11 Suites)**:
+- **Run Master Regression Test Suite (All 12 Suites)**:
   ```bash
   npm test
   ```
@@ -244,6 +250,7 @@ CineVerse includes a self-bootstrapping master regression runner covering all de
   npm run test:deploy    # Stage 5: Deployment readiness
   npm run test:stage7    # Stage 7: CI/CD pipeline verification
   npm run test:stage8    # Stage 8: Final acceptance test suite
+  npm run test:stage10   # Stage 10: Ratings, reviews & community suite
   ```
 - **Run Dependency Security Audit**:
   ```bash

@@ -151,7 +151,61 @@ Tracks aggregate platform-wide view counters per title.
 | `lastViewedAt`| `Date` | No | Default: `Date.now` | Last view increment timestamp |
 
 **Indexes**:
-- `{ movieId: 1 }` (`unique: true`).
+### Collection: `ratings` ([server/models/Rating.js](file:///c:/Users/Mubashirhussensk/OneDrive/Desktop/Movie_app/server/models/Rating.js))
+Stores user star ratings (1–5 scale).
+
+| Field | Type | Required | Constraints / Defaults | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `_id` | `ObjectId` | Auto | Primary Key | Unique entry identifier |
+| `userId` | `ObjectId` | Yes | `ref: 'User'` | Reference to rating author |
+| `movieId` | `Number` | Yes | Integer | TMDB / Catalog movie ID |
+| `rating` | `Number` | Yes | `min: 1, max: 5` | Integer star rating score |
+| `createdAt`| `Date` | Auto | Managed by Mongoose | Initial rating timestamp |
+| `updatedAt`| `Date` | Auto | Managed by Mongoose | Last rating modification |
+
+**Indexes**:
+- Compound Unique Index: `{ userId: 1, movieId: 1 }` (`unique: true`) — Guarantees only 1 active rating per user per movie.
+- Index: `{ movieId: 1 }` — Enables fast aggregation of community averages and distributions.
+
+---
+
+### Collection: `reviews` ([server/models/Review.js](file:///c:/Users/Mubashirhussensk/OneDrive/Desktop/Movie_app/server/models/Review.js))
+Stores user text reviews, optional attached ratings, spoiler flags, and helpful vote arrays.
+
+| Field | Type | Required | Constraints / Defaults | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `_id` | `ObjectId` | Auto | Primary Key | Unique review identifier |
+| `userId` | `ObjectId` | Yes | `ref: 'User'` | Reference to review author |
+| `movieId` | `Number` | Yes | Integer | TMDB / Catalog movie ID |
+| `rating` | `Number` | No | `min: 1, max: 5`, default: `null` | Star rating associated with review |
+| `reviewText`| `String` | Yes | `minlength: 5, maxlength: 1000` | Sanitized review body |
+| `isSpoiler`| `Boolean` | No | Default: `false` | True if review contains spoilers |
+| `helpfulVotes`| `[ObjectId]`| No | Array of `ref: 'User'` | Users who found review helpful |
+| `helpfulCount`| `Number` | No | Default: `0` | Total helpful votes counter |
+| `reportCount` | `Number` | No | Default: `0` | Moderation report counter |
+| `status` | `String` | No | `enum: ['approved', 'flagged', 'hidden']` | Content moderation status |
+
+**Indexes**:
+- `{ movieId: 1, status: 1, createdAt: -1 }` — Optimizes newest reviews retrieval.
+- `{ movieId: 1, helpfulCount: -1 }` — Optimizes most helpful reviews retrieval.
+- `{ movieId: 1, rating: -1 }` — Optimizes highest-rated reviews retrieval.
+- Compound Index: `{ userId: 1, movieId: 1 }` — Fast lookup for user's own review.
+
+---
+
+### Collection: `reviewreports` ([server/models/ReviewReport.js](file:///c:/Users/Mubashirhussensk/OneDrive/Desktop/Movie_app/server/models/ReviewReport.js))
+Tracks community moderation reports for inappropriate or spoiler content.
+
+| Field | Type | Required | Constraints / Defaults | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `_id` | `ObjectId` | Auto | Primary Key | Unique report identifier |
+| `reviewId` | `ObjectId` | Yes | `ref: 'Review'` | Reference to reported review |
+| `reportedBy`| `ObjectId` | Yes | `ref: 'User'` | Reference to reporting user |
+| `reason` | `String` | Yes | `enum: ['harassment', 'spam', 'hate_speech', 'unmarked_spoiler', 'other']` | Violation category |
+| `details` | `String` | No | Max 500 chars | Optional context for moderators |
+
+**Indexes**:
+- Compound Unique Index: `{ reviewId: 1, reportedBy: 1 }` (`unique: true`) — Prevents duplicate reports by the same user.
 
 ---
 

@@ -336,3 +336,107 @@ The CineVerse backend exposes a RESTful JSON API organized around resource contr
 ```
 
 *(Identical API pattern applies to `/api/favorites` and `/api/history`)*
+
+---
+
+## 5. Community Ratings & Reviews (`/api/movies/:id/ratings`, `/api/reviews`)
+
+### `GET /api/movies/:movieId/ratings`
+- **Purpose**: Retrieve community rating stats (average, total count, 1-5 star distribution) and the active user's rating.
+- **Auth**: Optional (Attaches `userRating` if JWT provided).
+- **Response (200 OK)**:
+```json
+{
+  "success": true,
+  "data": {
+    "userRating": 5,
+    "averageRating": 4.5,
+    "totalRatings": 42,
+    "distribution": { "1": 1, "2": 2, "3": 5, "4": 14, "5": 20 }
+  }
+}
+```
+
+### `POST /api/movies/:movieId/ratings`
+- **Purpose**: Submit or update a 1–5 star rating for a movie (idempotent upsert).
+- **Auth**: **Required** (`Bearer <token>`)
+- **Request Body**: `{ "rating": 5 }` (Integer between 1 and 5)
+- **Response (200 OK)**: Returns updated user rating and refreshed community stats.
+
+### `DELETE /api/movies/:movieId/ratings`
+- **Purpose**: Delete authenticated user's rating for a movie.
+- **Auth**: **Required**
+- **Response (200 OK)**: `{ "success": true, "message": "Rating removed successfully" }`
+
+### `GET /api/movies/:movieId/reviews`
+- **Purpose**: Retrieve paginated reviews with sorting.
+- **Auth**: Optional (Attaches `isAuthor` and `hasVotedHelpful`).
+- **Query Params**: `page` (default 1), `limit` (default 10), `sort` (`newest`, `highest`, `helpful`).
+- **Response (200 OK)**:
+```json
+{
+  "success": true,
+  "data": {
+    "reviews": [
+      {
+        "id": "6708b7e2e81fc69c73b06399",
+        "movieId": 550,
+        "rating": 5,
+        "reviewText": "An absolute masterpiece of modern psychological cinema.",
+        "isSpoiler": false,
+        "helpfulCount": 12,
+        "hasVotedHelpful": false,
+        "isAuthor": false,
+        "author": {
+          "id": "6708b292e81fc69c73b06381",
+          "name": "Alex Mercer",
+          "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"
+        },
+        "createdAt": "2026-10-11T09:45:00.000Z"
+      }
+    ],
+    "pagination": { "page": 1, "limit": 10, "totalReviews": 1, "totalPages": 1 }
+  }
+}
+```
+
+### `POST /api/movies/:movieId/reviews`
+- **Purpose**: Submit a new movie review (max 1 review per user per movie).
+- **Auth**: **Required**
+- **Request Body**:
+```json
+{
+  "reviewText": "Stunning direction and brilliant soundtrack.",
+  "rating": 5,
+  "isSpoiler": false
+}
+```
+- **Response (201 Created)**: Returns created review object.
+- **Error (409 Conflict)**: Returned if user has already reviewed this movie.
+
+### `PUT /api/reviews/:reviewId`
+- **Purpose**: Edit review content, rating, or spoiler tag.
+- **Auth**: **Required** (Enforces author ownership; returns 403 Forbidden for non-authors).
+
+### `DELETE /api/reviews/:reviewId`
+- **Purpose**: Delete review.
+- **Auth**: **Required** (Enforces author ownership or admin role).
+
+### `POST /api/reviews/:reviewId/helpful`
+- **Purpose**: Toggle helpful vote on a review.
+- **Auth**: **Required** (Prevents self-voting on own reviews).
+- **Response (200 OK)**: Returns updated `helpfulCount` and `hasVotedHelpful` boolean.
+
+### `POST /api/reviews/:reviewId/report`
+- **Purpose**: Report review for moderation.
+- **Auth**: **Required**
+- **Request Body**:
+```json
+{
+  "reason": "unmarked_spoiler",
+  "details": "Major ending plot twist not marked with spoiler tag."
+}
+```
+- **Validation**: `reason` must be one of: `harassment`, `spam`, `hate_speech`, `unmarked_spoiler`, `other`.
+- **Response (201 Created)**: Report recorded; duplicate reports from the same user rejected with 409 Conflict.
+

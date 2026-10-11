@@ -25,6 +25,7 @@ import { useAuth } from '../../hooks/useAuth';
 import movieService from '../../services/movieService';
 import authService from '../../services/authService';
 import CastSection from '../../components/castSection';
+import CommunityReviews from '../../components/CommunityReviews';
 import MovieActions from '../../components/movieActions';
 import ProviderLinks from '../../components/providerLinks';
 import TrailerModal from '../../components/TrailerModal';
@@ -517,6 +518,12 @@ const MovieDetails = () => {
           cast={credits?.cast || []}
           crew={credits?.crew || []}
           loading={loading}
+        />
+
+        {/* Ratings, Reviews & Community Section */}
+        <CommunityReviews
+          movieId={movieId}
+          movieTitle={movie?.title || 'this movie'}
         />
 
         {/* Section 1: Similar Movies */}

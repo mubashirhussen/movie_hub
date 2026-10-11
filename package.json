@@ -27,6 +27,8 @@
     "test:stage7": "node test_stage7_pipeline_verification.js",
     "test:stage8": "node test_stage8_final_acceptance.js",
     "test:acceptance": "node test_stage8_final_acceptance.js",
+    "test:stage10": "node test_stage10_community.js",
+    "test:community": "node test_stage10_community.js",
     "test:ci": "node run_all_tests.js",
     "audit": "npm audit --audit-level=high"
   },

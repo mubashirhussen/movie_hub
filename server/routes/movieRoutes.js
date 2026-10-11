@@ -17,6 +17,17 @@ import {
   getByIndustry,
 } from '../controllers/movieController.js';
 
+import {
+  submitRating,
+  getMovieRatings,
+  deleteRating,
+} from '../controllers/ratingController.js';
+import {
+  getMovieReviews,
+  createReview,
+} from '../controllers/reviewController.js';
+import { protect, optionalAuth } from '../middleware/authMiddleware.js';
+
 const router = express.Router();
 
 router.get('/popular', getPopular);
@@ -37,5 +48,15 @@ router.get('/:id/providers', getMovieProviders);
 router.get('/:id/similar', getSimilarMovies);
 router.get('/:id/recommendations', getMovieRecommendations);
 router.post('/:id/view', incrementMovieView);
+
+// Community Ratings Endpoints
+router.get('/:id/ratings', optionalAuth, getMovieRatings);
+router.post('/:id/ratings', protect, submitRating);
+router.put('/:id/ratings', protect, submitRating);
+router.delete('/:id/ratings', protect, deleteRating);
+
+// Community Reviews Endpoints
+router.get('/:id/reviews', optionalAuth, getMovieReviews);
+router.post('/:id/reviews', protect, createReview);
 
 export default router;

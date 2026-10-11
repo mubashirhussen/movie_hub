@@ -11,6 +11,7 @@ import watchlistRoutes from './routes/watchlistRoutes.js';
 import favoriteRoutes from './routes/favoriteRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import historyRoutes from './routes/historyRoutes.js';
+import reviewRoutes from './routes/reviewRoutes.js';
 import { errorHandler, notFoundHandler } from './middleware/errorMiddleware.js';
 import { securityHeaders, getCorsOptions } from './middleware/securityMiddleware.js';
 import { apiLimiter, authLimiter } from './middleware/rateLimitMiddleware.js';
@@ -73,6 +74,7 @@ app.use('/api/watchlist', watchlistRoutes);
 app.use('/api/favorites', favoriteRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/history', historyRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 // Serve Client Static Build in production
 const distPath = path.resolve(__dirname, '../dist');
