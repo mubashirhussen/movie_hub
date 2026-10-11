@@ -23,7 +23,10 @@
     "test:stage4": "node test_stage4_performance_a11y.js",
     "test:a11y": "node test_stage4_performance_a11y.js",
     "test:stage5": "node test_stage5_deployment_readiness.js",
-    "test:deploy": "node test_stage5_deployment_readiness.js"
+    "test:deploy": "node test_stage5_deployment_readiness.js",
+    "test:stage7": "node test_stage7_pipeline_verification.js",
+    "test:ci": "node run_all_tests.js",
+    "audit": "npm audit --audit-level=high"
   },
   "keywords": [
     "react",

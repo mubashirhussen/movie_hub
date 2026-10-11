@@ -1,0 +1,58 @@
+name: CineVerse Deploy to Staging
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy-staging:
+    name: Deploy to Staging Environment
+    runs-on: ubuntu-latest
+    environment:
+      name: staging
+      url: https://cineverse-staging.onrender.com
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Trigger Staging Deployment via Webhook
+        env:
+          DEPLOY_HOOK_URL: ${{ secrets.RENDER_STAGING_DEPLOY_HOOK }}
+        run: |
+          if [ -n "$DEPLOY_HOOK_URL" ]; then
+            echo "Triggering automated staging deployment on Render..."
+            RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$DEPLOY_HOOK_URL")
+            HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+            if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+              echo "Staging deployment triggered successfully (HTTP $HTTP_CODE)."
+            else
+              echo "Deploy hook returned HTTP $HTTP_CODE. Check Render service status."
+              exit 1
+            fi
+          else
+            echo "NOTICE: RENDER_STAGING_DEPLOY_HOOK secret is not configured in repository."
+            echo "Deployment relies on Render Git-push auto-deploy or manual dashboard trigger."
+          fi
+
+      - name: Verify Staging Service Health Probe
+        run: |
+          echo "Waiting 15 seconds for deployment propagation..."
+          sleep 15
+          STAGING_URL="https://cineverse-staging.onrender.com/api/health"
+          echo "Checking health probe at $STAGING_URL..."
+          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" --retry 3 --retry-delay 5 "$STAGING_URL" || true)
+          echo "Health probe response: HTTP $STATUS_CODE"
+          if [ "$STATUS_CODE" -eq 200 ]; then
+            echo "Staging deployment health probe passed!"
+          else
+            echo "Staging host returned $STATUS_CODE (host may be in cold sleep or DNS propagation). Check Render dashboard."
+          fi

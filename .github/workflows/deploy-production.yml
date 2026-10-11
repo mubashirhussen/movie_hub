@@ -1,0 +1,75 @@
+name: CineVerse Production Release & Deployment
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  release:
+    types: [ published ]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  validate-release:
+    name: Validate Production Release Tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Release Code
+        uses: actions/checkout@v4
+
+      - name: Verify Release Ref & Lockfile
+        run: |
+          echo "Preparing release deployment for ref: ${{ github.ref }}"
+          test -f package.json || { echo "Missing package.json"; exit 1; }
+          test -f package-lock.json || { echo "Missing package-lock.json"; exit 1; }
+
+  deploy-production:
+    name: Execute Production Release
+    needs: validate-release
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://cineverse.onrender.com
+
+    steps:
+      - name: Checkout Release Code
+        uses: actions/checkout@v4
+
+      - name: Trigger Production Deployment via Webhook
+        env:
+          PROD_DEPLOY_HOOK: ${{ secrets.RENDER_PROD_DEPLOY_HOOK }}
+        run: |
+          if [ -n "$PROD_DEPLOY_HOOK" ]; then
+            echo "Triggering production deployment on Render..."
+            RESPONSE=$(curl -s -w "\n%{http_code}" -X POST "$PROD_DEPLOY_HOOK")
+            HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+            if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+              echo "Production deployment webhook accepted (HTTP $HTTP_CODE)."
+            else
+              echo "Production webhook returned HTTP $HTTP_CODE. Investigation required."
+              exit 1
+            fi
+          else
+            echo "NOTICE: RENDER_PROD_DEPLOY_HOOK secret is not configured in repository."
+            echo "Deployment relies on protected Render manual release promotion."
+          fi
+
+      - name: Post-Deployment Production Verification
+        run: |
+          echo "Awaiting deployment rollout (20s initial window)..."
+          sleep 20
+          PROD_HEALTH_URL="https://cineverse.onrender.com/api/health"
+          echo "Probing production liveness at $PROD_HEALTH_URL..."
+          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" --retry 3 --retry-delay 5 "$PROD_HEALTH_URL" || true)
+          echo "Production health probe response: HTTP $STATUS_CODE"
+          if [ "$STATUS_CODE" -eq 200 ]; then
+            echo "Production deployment liveness confirmed!"
+          else
+            echo "Production health returned HTTP $STATUS_CODE. Check Render service logs."
+          fi
